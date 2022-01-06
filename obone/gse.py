@@ -93,13 +93,12 @@ class GSE:
                     if re.search(drop, key):
                         metadata.pop(key, None)
             all_metadata[name] = metadata
-
         all_metadata = pd.DataFrame(all_metadata).T
-        # convert all list values into string for later splitting
-        all_metadata = all_metadata.applymap(lambda x: "\t".join(x), na_action="ignore")
 
+        # split columns with multiple values into seperate columns
+        # convert all list values into string to split
+        all_metadata = all_metadata.applymap(lambda x: "\t".join(x), na_action="ignore")
         for column in all_metadata.columns:
-            # split columns with multiple values into seperate columns
             to_merge = all_metadata[column].str.split("\t", expand=True)
             if len(to_merge.columns) > 1:
                 # create column names for additional columns
@@ -116,8 +115,8 @@ class GSE:
 
         df.index.name = "Sample"
 
+        # rename columns with value
         for column in df.columns:
-            # rename columns with cell value label
             if df[column].str.contains(":").all():
                 value = df[column].str.extract(r"(.*:)").iloc[0, 0]
                 value = str(value).strip(":")
