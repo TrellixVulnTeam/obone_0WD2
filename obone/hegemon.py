@@ -135,4 +135,5 @@ class Hegemon:
     def ih(self, name: str) -> pd.DataFrame:
         ih_df = self.survival[name]
         ih_df.insert(1, "ArrayHeader", ih_df["Sample"])
+        ih_df.insert(1, "ClinicalHeader", ih_df["c title"])
         return ih_df
