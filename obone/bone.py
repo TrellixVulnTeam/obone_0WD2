@@ -30,8 +30,6 @@ class BoNE(Hegemon):
         self.group_colors = list(group_data["Color"])
         self.res = list(group_data["ROC AUC"].dropna())
 
-        plt.figure(figsize=(10, 5), dpi=100)
-
     def rank(self, gene_weights: dict) -> pd.DataFrame:
         for weight, group in gene_weights.items():
             expr = self.expr
@@ -68,9 +66,7 @@ class BoNE(Hegemon):
         df.index.name = "Sample"
         return df
 
-    def plot_data(
-        self, survival_col: str, gene_weights: dict, groups: dict
-    ) -> pd.DataFrame:
+    def plot_data(self, survival_col, gene_weights, groups) -> pd.DataFrame:
         df = self.score(survival_col, gene_weights)
 
         # map cval to samples and groups
@@ -140,7 +136,7 @@ class BoNE(Hegemon):
             spine.set_visible(False)
         ax.grid(which="major", color="black", alpha=0.5, linestyle="-", linewidth=0.75)
 
-        res_text = f'AUC: {",".join([str(val) for val in self.res])}'
+        res_text = f'ROC: {",".join([str(round(val,2)) for val in self.res])}'
         ax.text(len(self.cval), 4, res_text)
         return ax
 
@@ -173,8 +169,12 @@ class BoNE(Hegemon):
                 fontsize=12,
             )
 
-    def violin(self, survival_col: str, gene_weights: dict, groups: dict):
-        self.init(survival_col, gene_weights, groups)
+    def violin(self, survival_col=None, gene_weights=None, groups=None):
+        if not hasattr(self, "sample_data"):
+            if survival_col == None:
+                raise ValueError("Either init() BoNE or pass arguments")
+            self.init(survival_col, gene_weights, groups)
+
         ax = self.title_bar()
         self.title_bar_top(ax)
 
@@ -215,8 +215,12 @@ class BoNE(Hegemon):
                 y_value += 1
         return ax
 
-    def density(self, survival_col: str, gene_weights: dict, groups: dict):
-        self.init(survival_col, gene_weights, groups)
+    def density(self, survival_col=None, gene_weights=None, groups=None):
+        if not hasattr(self, "sample_data"):
+            if survival_col == None:
+                raise ValueError("Either init() BoNE or pass arguments")
+            self.init(survival_col, gene_weights, groups)
+
         ax = self.title_bar()
         self.title_bar_top(ax)
 

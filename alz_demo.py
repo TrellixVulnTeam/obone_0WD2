@@ -46,12 +46,11 @@ class ALZanalysis:
         groups = {
             "CTL": "Control",
             # "Group0.3": "0.3",
-            # "Group1": "1",
+            "Group1": "1",
             # "Group3": "3",
             "Group10": "10",
         }
-        rodriguez.violin(name, self.gene_weights_1, groups)
-        plt.savefig("rodriguez2021_violin.png")
+        rodriguez.init(name, self.gene_weights_1, groups)
         return rodriguez
 
 
@@ -60,4 +59,7 @@ if __name__ == "__main__":
 
     dir = sys.argv[1]
     alz = ALZanalysis(dir)
-    alz.rodriguez2021()
+    avrampou = alz.avrampou2019()
+    plt.figure(figsize=(10, 5), dpi=100)
+    avrampou.violin()
+    plt.savefig("avrampou2019_violin.png")
