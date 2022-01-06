@@ -55,9 +55,7 @@ class BoNE(Hegemon):
         weights = [float(w) for w in list(gene_weights.keys())]
         ranks["Score"] = np.dot(ranks, np.array(weights))
         ranks.name = "Sample"
-        print(ranks.shape)
         ranks = ranks[ranks["Score"].notna()]
-        print(ranks.shape)
         return ranks
 
     def score(self, survival_col: str, gene_weights: dict) -> pd.DataFrame:

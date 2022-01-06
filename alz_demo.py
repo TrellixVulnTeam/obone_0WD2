@@ -51,7 +51,7 @@ class ALZanalysis:
             "Group10": "10",
         }
         rodriguez.violin(name, self.gene_weights_1, groups)
-        plt.savefig("mega_v.png")
+        plt.savefig("rodriguez2021_violin.png")
         return rodriguez
 
 
