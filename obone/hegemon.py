@@ -1,8 +1,7 @@
 from dataclasses import dataclass
 import pandas as pd
 import numpy as np
-from io import BytesIO, StringIO
-import subprocess
+from io import BytesIO
 import warnings
 
 
