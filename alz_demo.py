@@ -27,7 +27,7 @@ class ALZanalysis:
         gse138024 = obone.GSE(accessionID="GSE138024")
         survival = gse138024.survival()
         print("survival file created")
-        expr = pd.read_csv("GSE138024-GPL17021-expr.txt", sep="\t")
+        expr = pd.read_parquet("GSE138024-GPL17021-expr.parquet.gzip")
         print("expr file created")
         avrampou = obone.BoNE(expr, survival)
 
