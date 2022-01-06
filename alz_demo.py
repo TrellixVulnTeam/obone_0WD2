@@ -41,7 +41,7 @@ class ALZanalysis:
         name = "c drug_concentration_um"
         survival[name] = survival[name].fillna("Control")
         survival[name] = survival[name].astype(str)
-        expr = pd.read_csv("GSE164788-GPL18573-expr.txt", sep="\t")
+        expr = pd.read_parquet("GSE164788-GPL18573-expr.parquet.gzip")
         rodriguez = obone.BoNE(expr, survival)
         groups = {
             "CTL": "Control",
