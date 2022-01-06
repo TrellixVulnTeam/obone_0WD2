@@ -59,7 +59,8 @@ if __name__ == "__main__":
 
     dir = sys.argv[1]
     alz = ALZanalysis(dir)
-    avrampou = alz.avrampou2019()
+    # avrampou = alz.avrampou2019()
+    rodriguez = alz.rodriguez2021()
     plt.figure(figsize=(10, 5), dpi=100)
-    avrampou.violin()
-    plt.savefig("avrampou2019_violin.png")
+    rodriguez.violin()
+    plt.savefig("rodriguez2020_violin.png")

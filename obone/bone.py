@@ -53,7 +53,6 @@ class BoNE(Hegemon):
         weights = [float(w) for w in list(gene_weights.keys())]
         ranks["Score"] = np.dot(ranks, np.array(weights))
         ranks.name = "Sample"
-        ranks = ranks[ranks["Score"].notna()]
         return ranks
 
     def score(self, survival_col: str, gene_weights: dict) -> pd.DataFrame:
@@ -62,6 +61,7 @@ class BoNE(Hegemon):
 
         # add score
         score = self.rank(gene_weights)["Score"]
+        # FUTURE: raise warning if survival index != expr columns and alert how many rows lost
         df = pd.concat((survival, score), join="inner", axis=1)
         df.index.name = "Sample"
         return df
