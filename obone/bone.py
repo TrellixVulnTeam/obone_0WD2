@@ -66,7 +66,7 @@ class BoNE(Hegemon):
 
         # add score
         score = self.rank(gene_weights)["Score"]
-        df = pd.concat((survival, score), axis=1)
+        df = pd.concat((survival, score), join="inner", axis=1)
         df.index.name = "Sample"
         return df
 
@@ -94,7 +94,6 @@ class BoNE(Hegemon):
                 cval_sample_type[sample_type] = i
         df = df[df["Sample Type"].isin(all_sample_types)]
         df["Cval"] = df["Sample Type"].replace(cval_sample_type)
-        print(df[df["Score"].isna()])
 
         # add annotation
         df = df.reset_index()
@@ -121,7 +120,6 @@ class BoNE(Hegemon):
 
         # sort data by cval for proper coloring
         df = df.sort_values("Cval")
-        exit()
         return df
 
     def title_bar(self):

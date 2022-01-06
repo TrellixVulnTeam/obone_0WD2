@@ -45,9 +45,9 @@ class ALZanalysis:
         rodriguez = obone.BoNE(expr, survival)
         groups = {
             "CTL": "Control",
-            "Group0.3": "0.3",
-            "Group1": "1",
-            "Group3": "3",
+            # "Group0.3": "0.3",
+            # "Group1": "1",
+            # "Group3": "3",
             "Group10": "10",
         }
         rodriguez.violin(name, self.gene_weights_1, groups)
