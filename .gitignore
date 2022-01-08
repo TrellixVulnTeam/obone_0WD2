@@ -3,3 +3,5 @@
 *.txt
 *.ipynb_checkpoints
 *checkpoint.ipynb
+*.tar*
+*.soft*
