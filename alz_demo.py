@@ -28,6 +28,7 @@ class ALZanalysis:
         survival = gse138024.survival()
         print("survival file created")
         expr = pd.read_parquet("GSE138024-GPL17021-expr.parquet.gzip")
+        expr = expr.set_index("Name")
         print("expr file created")
         avrampou = obone.BoNE(expr, survival)
 
@@ -42,6 +43,7 @@ class ALZanalysis:
         survival[name] = survival[name].fillna("Control")
         survival[name] = survival[name].astype(str)
         expr = pd.read_parquet("GSE164788-GPL18573-expr.parquet.gzip")
+        expr = expr.set_index("gene_name")
         rodriguez = obone.BoNE(expr, survival)
         groups = {
             "CTL": "Control",
@@ -53,14 +55,34 @@ class ALZanalysis:
         rodriguez.init(name, self.gene_weights_1, groups)
         return rodriguez
 
+    def gse1691687(self):
+        # raw_files
+        pass
+
+    def tan2020(self):
+        gse150696 = obone.GSE(accessionID="GSE150696")
+        survival = gse150696.survival()
+        # survival.to_csv("survival.csv")
+        # expr = gse150696.expr()
+        # expr.to_csv("expr.csv")
+        gse150696.to_gene("GPL17585")
+
+    def gse169687(self):
+        gse169687 = obone.GSE(accessionID="GSE169687")
+        survival = gse169687.survival()
+        survival.to_csv("gse169687_survival.csv")
+
 
 if __name__ == "__main__":
     import sys
 
     dir = sys.argv[1]
     alz = ALZanalysis(dir)
+
+    alz.gse169687()
+
     # avrampou = alz.avrampou2019()
-    rodriguez = alz.rodriguez2021()
-    plt.figure(figsize=(10, 5), dpi=100)
-    rodriguez.violin()
-    plt.savefig("rodriguez2020_violin.png")
+    # rodriguez = alz.rodriguez2021()
+    # plt.figure(figsize=(10, 5), dpi=100)
+    # rodriguez.violin()
+    # plt.savefig("rodriguez2020_violin.png")

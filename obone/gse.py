@@ -48,6 +48,7 @@ class GSE:
             "platform_id",
             "series_id",
             "relation",
+            "channel",
         ]
 
         all_metadata = {}
@@ -61,7 +62,7 @@ class GSE:
             metadata = gsm.metadata.copy()
             for key in gsm.metadata:
                 for drop in to_drop:
-                    if re.search(drop, key):
+                    if re.search(drop, key.lower()):
                         metadata.pop(key, None)
             all_metadata[name] = metadata
         all_metadata = pd.DataFrame(all_metadata).T
@@ -94,9 +95,10 @@ class GSE:
                 df = df.rename(columns={column: value})
                 if isinstance(df[value], pd.DataFrame):
                     continue
+                # remove 'xxxx: ' from each column value
                 df[value] = df[value].str.extract(r".*: (.*)")
 
-        # add 'c ' label per hegemon requirements
+        # add 'c ' to all columns per hegemon requirements
         df = df.rename(columns={col: "c " + col for col in df.columns})
 
         self._survival = df
@@ -157,7 +159,7 @@ class GSE:
         expr = expr.drop("Description", axis=1)
         return expr
 
-    def to_gsm(self, expr: pd.DataFrame, survival_col: str):
+    def rename_gsm(self, expr: pd.DataFrame, survival_col: str):
         if hasattr(self, "_survival"):
             survival = self._survival
         else:
@@ -173,3 +175,24 @@ class GSE:
         if len(not_in_expr) > 0:
             print(f"{not_in_expr} columns were not renamed.")
         return expr
+
+    def rename_gsm_2(self):
+        if "GeneAssignment" in gpl_table.columns:
+            lst = gpl_table["GeneAssignment"]
+            for l in lst:
+                if l != "---":
+                    l = str(l)
+                    x = l.split(" /// ")
+                    y = [y.split(" // ") for y in x]
+                    col_title.append(
+                        " /// ".join(i[2] if len(i) > 2 else "ERR" for i in x)
+                    )
+                    col_symbol.append(
+                        " /// ".join(i[1] if len(i) > 2 else "ERR" for i in x)
+                    )
+                else:
+                    col_symbol.append("---")
+                    col_title.append("---")
+
+            df = gpl_table["GeneAssignment"].str.split(" /// ", expand=True)
+            df = df.fillna("Error")
