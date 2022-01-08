@@ -1,6 +1,5 @@
 *__pycache__
 *.png
-*.txt
 *.ipynb_checkpoints
 *checkpoint.ipynb
 *.tar*
