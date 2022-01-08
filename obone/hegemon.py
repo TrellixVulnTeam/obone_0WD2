@@ -12,14 +12,12 @@ class Hegemon:
 
     def __post_init__(self):
         # change expr first column to Name and make all capital letters
-        self.expr.columns.values[0] = "Name"
-        self.expr["Name"] = self.expr["Name"].str.upper()
-        self.expr = self.expr.set_index("Name")
+        self.expr.index.name = "Name"
+        self.expr.index = self.expr.index.str.upper()
 
         # change survival first column to Sample and make all capital letters
-        self.survival.columns.values[0] = "Sample"
-        self.survival["Sample"] = self.survival["Sample"].str.upper()
-        self.survival = self.survival.set_index("Sample")
+        self.survival.index.name = "Sample"
+        self.survival.index = self.survival.index.str.upper()
 
     def thr(self) -> pd.DataFrame:
         warnings.filterwarnings("ignore")
