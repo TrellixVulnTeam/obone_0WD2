@@ -8,14 +8,18 @@ import shutil
 import os
 
 
-def counts2expr(counts_df: pd.DataFrame) -> pd.DataFrame:
-    counts_df = counts_df.set_index(["ProbeID", "Name"])
-    adata = sc.AnnData(counts_df.T)
+def normalize(expr: pd.DataFrame, type: str = "cpm") -> pd.DataFrame:
+    if type.lower() != "cpm":
+        raise ValueError(f"{type} normalization not available. Please use 'cpm'")
+
+    expr = expr.set_index(["ProbeID", "Name"])
+    adata = sc.AnnData(expr.T)
     # adata.var_names_make_unique()
     # 1e6 = counts per million (cpm) normalization
     sc.pp.normalize_total(adata, target_sum=1e6)
     sc.pp.log1p(adata, base=2)
-    return adata.to_df().T
+    expr = adata.to_df().T
+    return expr
 
 
 def tar2rcc(tar_file: str) -> str:
