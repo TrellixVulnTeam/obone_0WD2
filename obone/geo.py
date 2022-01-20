@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from multiprocessing.sharedctypes import Value
 import GEOparse
 import pandas as pd
 import numpy as np
@@ -20,7 +21,7 @@ class GEO:
 
         # # remove downloaded soft file
         # os.remove(glob.glob(f"{self.accessionID}*.soft*")[0])
-        
+
     def survival(self, gpl_name: str = None) -> pd.DataFrame:
         """Creates metadata information for each GSM (sample)
 
@@ -104,7 +105,13 @@ class GEO:
         df = df.rename(columns={col: "c " + col for col in df.columns})
         return df
 
-    def expr(self, gpl_name: str = None, take_log2: bool = False, rename_genes: bool = False, rename_samples: str = None) -> pd.DataFrame:
+    def expr(
+        self,
+        gpl_name: str = None,
+        take_log2: bool = False,
+        rename_genes: bool = False,
+        rename_samples: str = None,
+    ) -> pd.DataFrame:
         if not hasattr(self, "gsms"):
             self._geo_init()
 
@@ -118,8 +125,8 @@ class GEO:
 
             # check if table contains expr data
             if gsm.table.empty:
-                print("soft file does not contain expr data")
-                return
+                raise ValueError("soft file does not contain expr data")
+                exit()
 
             # collect expr data
             gsm_df = gsm.table
@@ -137,7 +144,7 @@ class GEO:
 
         if rename_genes:
             expr = self.rename_genes(expr, gpl_name)
-        
+
         if rename_samples != None:
             expr = self.rename_samples(expr, gpl_name, rename_samples)
 
