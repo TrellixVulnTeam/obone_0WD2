@@ -128,7 +128,6 @@ class GEO:
             # check if table contains expr data
             if gsm.table.empty:
                 raise ValueError("soft file does not contain expr data")
-                exit()
 
             # collect expr data
             gsm_df = gsm.table
