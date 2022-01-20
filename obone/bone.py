@@ -69,9 +69,19 @@ class BoNE(Hegemon):
     def plot_data(self, survival_col, gene_weights, groups) -> pd.DataFrame:
         df = self.score(survival_col, gene_weights)
 
-        # order group
+        # make group a dictionary
         if not isinstance(groups, dict):
             groups = {value: [value] for value in groups}
+        group_keys = list(groups.keys())
+
+        # check that no group values encapsulate other values for later regex
+        for i, val in enumerate(group_keys):
+            w_o_val = group_keys[:i] + group_keys[i + 1 :]
+            for v in w_o_val:
+                if val in v:
+                    raise ValueError(
+                        "Group values cannot contain other values (i.e. in [1, 10], 10 contains 1. Change '1' to '1.0')"
+                    )
 
         # map cval to samples and groups
         all_sample_types = []
@@ -92,7 +102,6 @@ class BoNE(Hegemon):
         df = df[df["Sample Type"].str.contains(searchfor)]
         df["Sample Type"] = df["Sample Type"].str.extract(f"({searchfor})")
         df["Cval"] = df["Sample Type"].replace(cval_sample_type)
-        print(df)
 
         # add annotation
         df = df.reset_index()

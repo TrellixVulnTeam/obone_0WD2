@@ -43,16 +43,12 @@ class ALZanalysis:
         survival[name] = survival[name].astype(str)
         # rename 1 -> 1.0 so that samples 10 and 1 have different regex matches
         survival[name] = survival[name].replace("1", "1.0")
-        print(survival["c drug_treatment"])
         expr = pd.read_parquet("GSE164788-GPL18573-expr.parquet.gzip")
         expr = expr.set_index("gene_name")
         rodriguez = obone.BoNE(expr, survival)
-        return rodriguez
 
-    def rodriguez2021_1(self):
-        rodriguez = self.rodriguez2021()
         name = "c drug_concentration_um"
-        groups = ["Control", "0.3", "1.0", "3", "10"]
+        groups = ["Control", "1.0", "10"]  # "0.3", "3"]
         rodriguez.init(name, self.gene_weights_1, groups)
         return rodriguez
 
