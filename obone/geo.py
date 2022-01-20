@@ -8,18 +8,19 @@ import glob
 
 
 @dataclass
-class GSE:
+class GEO:
     accessionID: str
 
-    def geoparse_init(self):
+    def _geo_init(self):
         # Add GEOparse gsms and gpls attributes as class attributes
         gse = GEOparse.get_GEO(geo=self.accessionID, silent=True)
         self.gsms = gse.gsms
         self.gpls = gse.gpls
+        self._default_gpl = list(self.gpls.keys())[0]
 
         # # remove downloaded soft file
         # os.remove(glob.glob(f"{self.accessionID}*.soft*")[0])
-
+        
     def survival(self, gpl_name: str = None) -> pd.DataFrame:
         """Creates metadata information for each GSM (sample)
 
@@ -30,10 +31,11 @@ class GSE:
             pd.DataFrame: survival dataframe including all samples and metadata
         """
         if not hasattr(self, "gsms"):
-            self.geoparse_init()
+            self._geo_init()
+
         # use first gpl if none specified
         if gpl_name == None:
-            gpl_name = list(self.gpls.keys())[0]
+            gpl_name = self._default_gpl
             print(f"Survival GPL: {gpl_name}")
 
         to_drop = [
@@ -100,16 +102,17 @@ class GSE:
 
         # add 'c ' to all columns per hegemon requirements
         df = df.rename(columns={col: "c " + col for col in df.columns})
-
-        self._survival = df
         return df
 
-    def expr(self, gpl_name: str, take_log2: bool = False) -> pd.DataFrame:
+    def expr(self, gpl_name: str = None, take_log2: bool = False, rename_genes: bool = False, rename_samples: str = None) -> pd.DataFrame:
         if not hasattr(self, "gsms"):
-            self.geoparse_init()
+            self._geo_init()
 
-        # confirm that gsm correlates to called gpl
+        if gpl_name == None:
+            gpl_name = self._default_gpl
+
         for name, gsm in self.gsms.items():
+            # confirm that gsm correlates to called gpl
             if gsm.metadata["platform_id"][0] != gpl_name:
                 continue
 
@@ -119,51 +122,63 @@ class GSE:
                 return
 
             # collect expr data
-            gsm_df = gsm.table.rename(columns={"ID_REF": "Name"})
-            gsm_df = gsm_df.set_index("Name")
-            gsm_df.columns = [name]
+            gsm_df = gsm.table
+            gsm_df.columns = ["Name", name]
+            gsm_s = gsm_df.set_index("Name")
 
             if take_log2:
-                gsm_df[name] = np.where(gsm_df[name] > 0, np.log2(gsm_df[name]), 0)
+                gsm_s = np.log2(gsm_s + 1)
 
             # merge each column into one dataframe
             if "expr" not in locals():
-                expr = gsm_df
+                expr = gsm_s
             else:
-                expr = expr.merge(gsm_df, left_index=True, right_index=True)
+                expr = expr.merge(gsm_s, left_index=True, right_index=True)
 
-        # expr = self.rename_genes(expr, gpl_name)
+        if rename_genes:
+            expr = self.rename_genes(expr, gpl_name)
+        
+        if rename_samples != None:
+            expr = self.rename_samples(expr, gpl_name, rename_samples)
 
-        self._expr = expr
         return expr
 
     def rename_genes(self, expr: pd.DataFrame, gpl_name: str):
+        # clean original gpl table column names
         gpl_table = self.gpls[gpl_name].table
-        sym_rename = ["GeneSym"]
-        [sym_rename.append(c) for c in gpl_table.columns if "Symbol" in c]
+        rename = lambda x: x.replace("_", " ").title().replace(" ", "")
+        gpl_table.columns = [rename(c) for c in gpl_table.columns]
+        gpl_table = gpl_table.rename(columns={"Id": "Name"})
+
+        # rename columns containing symbol info to 'Symbol'
+        sym_rename = []
+        [sym_rename.append(c) for c in gpl_table.columns if "Sym" in c]
         sym_rename = {r: "Symbol" for r in sym_rename}
         gpl_table = gpl_table.rename(columns=sym_rename)
+        gpl_table["Symbol"] = gpl_table["Symbol"].replace("---", pd.NA)
 
-        def_rename = ["GeneName", "GeneDesc", "Definition"]
-        [def_rename.append(c) for c in gpl_table.columns if "Description" in c]
+        # rename columns containing description info to 'Description'
+        def_rename = ["GeneName", "Definition"]
+        [def_rename.append(c) for c in gpl_table.columns if "Desc" in c]
         def_rename = {r: "Description" for r in def_rename}
         gpl_table = gpl_table.rename(columns=def_rename)
 
-        gpl_table = gpl_table.rename(columns={"Id": "Name"})
-        gpl_table["Symbol"] = gpl_table["Symbol"].replace("---", pd.NA)
+        # merge with expr frame to rename with gene names
         gpl_table = gpl_table[["Name", "Symbol", "Description"]]
         expr = expr.merge(gpl_table, how="left", on="Name")
         expr.loc[expr["Symbol"].isna(), "Symbol"] = expr["Name"]
         expr = expr.drop("Name", axis=1).rename(columns={"Symbol": "Name"})
         expr = expr.set_index("Name")
+
+        # drop description for now, perhaps include in future version
         expr = expr.drop("Description", axis=1)
         return expr
 
-    def rename_gsm(self, expr: pd.DataFrame, survival_col: str):
-        if hasattr(self, "_survival"):
-            survival = self._survival
-        else:
-            survival = self.survival()
+    def rename_samples(self, expr: pd.DataFrame, gpl_name: str, survival_col: str):
+        survival = self.survival(gpl_name)
+
+        if survival_col not in survival.columns:
+            raise ValueError(f"{survival_col} not in Survival frame")
 
         survival = survival[survival_col]
         survival = survival.to_dict()
@@ -175,24 +190,3 @@ class GSE:
         if len(not_in_expr) > 0:
             print(f"{not_in_expr} columns were not renamed.")
         return expr
-
-    def rename_gsm_2(self):
-        if "GeneAssignment" in gpl_table.columns:
-            lst = gpl_table["GeneAssignment"]
-            for l in lst:
-                if l != "---":
-                    l = str(l)
-                    x = l.split(" /// ")
-                    y = [y.split(" // ") for y in x]
-                    col_title.append(
-                        " /// ".join(i[2] if len(i) > 2 else "ERR" for i in x)
-                    )
-                    col_symbol.append(
-                        " /// ".join(i[1] if len(i) > 2 else "ERR" for i in x)
-                    )
-                else:
-                    col_symbol.append("---")
-                    col_title.append("---")
-
-            df = gpl_table["GeneAssignment"].str.split(" /// ", expand=True)
-            df = df.fillna("Error")

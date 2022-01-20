@@ -1,3 +1,3 @@
-from obone.gse import GSE
+from obone.geo import GEO
 from obone.bone import BoNE
 from obone.hegemon import Hegemon

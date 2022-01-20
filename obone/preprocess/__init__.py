@@ -1,1 +1,1 @@
-from ..gse import GSE
+from ..geo import GSE
