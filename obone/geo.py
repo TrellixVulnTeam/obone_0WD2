@@ -7,8 +7,6 @@ import scanpy as sc
 import os
 import glob
 
-import obone
-
 
 @dataclass
 class GEO:
@@ -19,7 +17,7 @@ class GEO:
         gse = GEOparse.get_GEO(geo=self.accessionID, silent=True)
         self.gsms = gse.gsms
         self.gpls = gse.gpls
-        self._default_gpl = list(self.gpls.keys())[0]
+        self.default_gpl = list(self.gpls.keys())[0]
 
         # # remove downloaded soft file
         # os.remove(glob.glob(f"{self.accessionID}*.soft*")[0])
@@ -28,7 +26,7 @@ class GEO:
         """Creates metadata information for each GSM (sample)
 
         Args:
-            gpl (string): gpl name associated
+            gpl_name (string): gpl name associated
 
         Returns:
             pd.DataFrame: survival dataframe including all samples and metadata
@@ -38,8 +36,8 @@ class GEO:
 
         # use first gpl if none specified
         if gpl_name == None:
-            gpl_name = self._default_gpl
-            print(f"Survival GPL: {gpl_name}")
+            gpl_name = self.default_gpl
+            print("Survival: Using default GPL")
 
         to_drop = [
             "geo_accession",
@@ -113,13 +111,14 @@ class GEO:
         log2: bool = False,
         normalize: bool = False,
         rename_genes: bool = False,
-        rename_samples: str = None,
+        rename_samples_with: str = None,
     ) -> pd.DataFrame:
         if not hasattr(self, "gsms"):
             self._geo_init()
 
         if gpl_name == None:
-            gpl_name = self._default_gpl
+            gpl_name = self.default_gpl
+            print("Expr: Using default GPL")
 
         for name, gsm in self.gsms.items():
             # confirm that gsm correlates to called gpl
@@ -151,8 +150,8 @@ class GEO:
         if rename_genes:
             expr = self.rename_genes(expr, gpl_name)
 
-        if rename_samples != None:
-            expr = self.rename_samples(expr, gpl_name, rename_samples)
+        if rename_samples_with != None:
+            expr = self.rename_samples_with(expr, gpl_name, rename_samples_with)
 
         return expr
 
@@ -187,7 +186,7 @@ class GEO:
         expr = expr.drop("Description", axis=1)
         return expr
 
-    def rename_samples(self, expr: pd.DataFrame, gpl_name: str, survival_col: str):
+    def rename_samples_with(self, expr: pd.DataFrame, gpl_name: str, survival_col: str):
         survival = self.survival(gpl_name)
 
         if survival_col not in survival.columns:
