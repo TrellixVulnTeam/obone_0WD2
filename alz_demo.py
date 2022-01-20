@@ -26,14 +26,13 @@ class ALZanalysis:
     def avrampou2019(self) -> obone.BoNE:
         gse138024 = obone.GEO(accessionID="GSE138024")
         survival = gse138024.survival()
-        print("survival file created")
         expr = pd.read_parquet("GSE138024-GPL17021-expr.parquet.gzip")
         expr = expr.set_index("Name")
-        print("expr file created")
         avrampou = obone.BoNE(expr, survival)
 
-        groups = {"WT": "WT", "RGS4 KO": "RGS4 KO"}
-        avrampou.init("c genotype", self.gene_weights_1, groups)
+        name = "c genotype"
+        groups = ["WT", "RGS4 KO"]
+        avrampou.init(name, self.gene_weights_1, groups)
         return avrampou
 
     def rodriguez2021(self) -> obone.BoNE:
@@ -42,18 +41,26 @@ class ALZanalysis:
         name = "c drug_concentration_um"
         survival[name] = survival[name].fillna("Control")
         survival[name] = survival[name].astype(str)
+        # rename 1 -> 1.0 so that samples 10 and 1 have different regex matches
+        survival[name] = survival[name].replace("1", "1.0")
         expr = pd.read_parquet("GSE164788-GPL18573-expr.parquet.gzip")
         expr = expr.set_index("gene_name")
         rodriguez = obone.BoNE(expr, survival)
-        groups = {
-            "CTL": "Control",
-            # "Group0.3": "0.3",
-            "Group1": "1",
-            # "Group3": "3",
-            "Group10": "10",
-        }
+
+        groups = ["Control", "0.3", "1.0", "3", "10"]
         rodriguez.init(name, self.gene_weights_1, groups)
         return rodriguez
+
+    def dong2013(self):
+        gse40060 = obone.GEO(accessionID="GSE40060")
+        survival = gse40060.survival()
+        expr = gse40060.expr(rename_genes=True)
+        dong = obone.BoNE(expr, survival)
+
+        name = "c source_name_ch1"
+        groups = ["endogenous", "overexpressed"]
+        dong.init(name, self.gene_weights_1, groups)
+        return dong
 
     def gse1691687(self):
         # raw_files
@@ -63,17 +70,11 @@ class ALZanalysis:
         gse150696 = obone.GEO(accessionID="GSE150696")
         survival = gse150696.survival()
         expr = gse150696.expr()
-        # gse150696.to_gene("GPL17585")
 
     def ryan2021(self):
         gse169687 = obone.GEO(accessionID="GSE169687")
         survival = gse169687.survival()
         expr = gse169687.expr()
-
-    def dong2013(self):
-        gse40060 = obone.GEO(accessionID="GSE40060")
-        expr = gse40060.expr(rename_genes=True)
-        print(expr)
 
 
 if __name__ == "__main__":
@@ -82,10 +83,17 @@ if __name__ == "__main__":
     dir = sys.argv[1]
     alz = ALZanalysis(dir)
 
-    alz.dong2013()
-
     # avrampou = alz.avrampou2019()
+    # plt.figure(figsize=(10, 5), dpi=100)
+    # avrampou.violin()
+    # plt.savefig("avrampou2019_violin.png")
+
     # rodriguez = alz.rodriguez2021()
     # plt.figure(figsize=(10, 5), dpi=100)
     # rodriguez.violin()
     # plt.savefig("rodriguez2020_violin.png")
+
+    dong = alz.dong2013()
+    plt.figure(figsize=(10, 5), dpi=100)
+    dong.violin()
+    plt.savefig("dong2013_violin.png")

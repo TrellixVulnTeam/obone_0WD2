@@ -69,6 +69,10 @@ class BoNE(Hegemon):
     def plot_data(self, survival_col, gene_weights, groups) -> pd.DataFrame:
         df = self.score(survival_col, gene_weights)
 
+        # order group
+        if not isinstance(groups, dict):
+            groups = {value: [value] for value in groups}
+
         # map cval to samples and groups
         all_sample_types = []
         cval_group = {}
@@ -77,23 +81,24 @@ class BoNE(Hegemon):
             # ensure samples are a list
             if not isinstance(sample_types, list):
                 sample_types = [sample_types]
-            # ensure samples are capitalized
-            sample_types = [str(sample_type) for sample_type in sample_types]
-            # craete list of all samples in every group
+            # craete single list of all samples in all groups
             all_sample_types.extend(sample_types)
-            # map cval to group name for line 92
+            # map cval to group name for later use
             cval_group[i] = group_name
             # create cval per sample type
             for sample_type in sample_types:
                 cval_sample_type[sample_type] = i
-        df = df[df["Sample Type"].isin(all_sample_types)]
+        searchfor = "|".join(all_sample_types)
+        df = df[df["Sample Type"].str.contains(searchfor)]
+        df["Sample Type"] = df["Sample Type"].str.extract(f"({searchfor})")
         df["Cval"] = df["Sample Type"].replace(cval_sample_type)
+        print(df)
 
         # add annotation
         df = df.reset_index()
         df["Annotation"] = df.groupby(["Cval"])["Sample"].transform("count")
         df["Annotation"] = "(" + df["Annotation"].astype(str) + ")"
-        df["Annotation"] = df["Cval"].replace(cval_group) + df["Annotation"]
+        df["Annotation"] = df["Cval"].replace(cval_group).str.title() + df["Annotation"]
         df = df.set_index("Sample")
 
         # add color
