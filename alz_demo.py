@@ -24,7 +24,7 @@ class ALZanalysis:
         return gene_weights
 
     def avrampou2019(self) -> obone.BoNE:
-        gse138024 = obone.GSE(accessionID="GSE138024")
+        gse138024 = obone.GEO(accessionID="GSE138024")
         survival = gse138024.survival()
         print("survival file created")
         expr = pd.read_parquet("GSE138024-GPL17021-expr.parquet.gzip")
@@ -37,7 +37,7 @@ class ALZanalysis:
         return avrampou
 
     def rodriguez2021(self) -> obone.BoNE:
-        gse164788 = obone.GSE(accessionID="GSE164788")
+        gse164788 = obone.GEO(accessionID="GSE164788")
         survival = gse164788.survival()
         name = "c drug_concentration_um"
         survival[name] = survival[name].fillna("Control")
@@ -60,17 +60,20 @@ class ALZanalysis:
         pass
 
     def tan2020(self):
-        gse150696 = obone.GSE(accessionID="GSE150696")
+        gse150696 = obone.GEO(accessionID="GSE150696")
         survival = gse150696.survival()
-        # survival.to_csv("survival.csv")
-        # expr = gse150696.expr()
-        # expr.to_csv("expr.csv")
-        gse150696.to_gene("GPL17585")
+        expr = gse150696.expr()
+        # gse150696.to_gene("GPL17585")
 
-    def gse169687(self):
-        gse169687 = obone.GSE(accessionID="GSE169687")
+    def ryan2021(self):
+        gse169687 = obone.GEO(accessionID="GSE169687")
         survival = gse169687.survival()
-        survival.to_csv("gse169687_survival.csv")
+        expr = gse169687.expr()
+
+    def dong2013(self):
+        gse40060 = obone.GEO(accessionID="GSE40060")
+        expr = gse40060.expr(rename_genes=True)
+        print(expr)
 
 
 if __name__ == "__main__":
@@ -79,7 +82,7 @@ if __name__ == "__main__":
     dir = sys.argv[1]
     alz = ALZanalysis(dir)
 
-    alz.gse169687()
+    alz.dong2013()
 
     # avrampou = alz.avrampou2019()
     # rodriguez = alz.rodriguez2021()
