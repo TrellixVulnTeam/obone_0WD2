@@ -1,11 +1,13 @@
 from dataclasses import dataclass
-from multiprocessing.sharedctypes import Value
 import GEOparse
 import pandas as pd
 import numpy as np
 import re
+import scanpy as sc
 import os
 import glob
+
+import obone
 
 
 @dataclass
@@ -108,7 +110,8 @@ class GEO:
     def expr(
         self,
         gpl_name: str = None,
-        take_log2: bool = False,
+        log2: bool = False,
+        normalize: bool = False,
         rename_genes: bool = False,
         rename_samples: str = None,
     ) -> pd.DataFrame:
@@ -133,7 +136,7 @@ class GEO:
             gsm_df.columns = ["Name", name]
             gsm_s = gsm_df.set_index("Name")
 
-            if take_log2:
+            if log2:
                 gsm_s = np.log2(gsm_s + 1)
 
             # merge each column into one dataframe
@@ -141,6 +144,9 @@ class GEO:
                 expr = gsm_s
             else:
                 expr = expr.merge(gsm_s, left_index=True, right_index=True)
+
+        if normalize:
+            expr = self.normalize(expr, "cpm")
 
         if rename_genes:
             expr = self.rename_genes(expr, gpl_name)
@@ -196,4 +202,17 @@ class GEO:
         not_in_expr = [c for c in columns if c not in expr.columns]
         if len(not_in_expr) > 0:
             print(f"{not_in_expr} columns were not renamed.")
+        return expr
+
+    def normalize(expr: pd.DataFrame, type: str = "cpm") -> pd.DataFrame:
+        if type.lower() != "cpm":
+            raise ValueError(f"{type} normalization not available. Please use 'cpm'")
+
+        adata = sc.AnnData(expr.T)
+        # target_sum of 1e6 equates to counts per million (cpm) normalization
+        if type == "cpm":
+            target_sum = 1e6
+        sc.pp.normalize_total(adata, target_sum=target_sum)
+        sc.pp.log1p(adata, base=2)
+        expr = adata.to_df().T
         return expr
