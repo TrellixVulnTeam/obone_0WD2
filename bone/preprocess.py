@@ -6,22 +6,26 @@ import os
 import re
 
 
-def normalize(expr: pd.DataFrame, probe_type: str = "cpm") -> pd.DataFrame:
+def log2(expr: pd.DataFrame):
+    expr = np.log2(expr + 1)
+    return expr
+
+
+def normalize(
+    expr: pd.DataFrame, probe_type: str = "cpm", log2: bool = False
+) -> pd.DataFrame:
     if probe_type.lower() != "cpm":
         raise ValueError(f"{probe_type} normalization not available. Please use 'cpm'")
 
-    expr = expr.set_index(["ProbeID", "Name"])
     adata = sc.AnnData(expr.T)
     # adata.var_names_make_unique()
     # 1e6 = counts per million (cpm) normalization
     sc.pp.normalize_total(adata, target_sum=1e6)
     sc.pp.log1p(adata, base=2)
     expr = adata.to_df().T
-    return expr
 
-
-def log2(expr: pd.DataFrame):
-    expr = np.log2(expr + 1)
+    if log2:
+        expr = np.log2(expr + 1)
     return expr
 
 

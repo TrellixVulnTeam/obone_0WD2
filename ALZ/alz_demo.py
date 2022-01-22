@@ -1,8 +1,6 @@
 import os
 import json
-from xmlrpc.client import Boolean
 import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
 import sys
 
@@ -94,15 +92,14 @@ class ALZanalysis:
             expr.index = expr.index.str.upper()
             expr.index.name = "Name"
             expr = bone.add_probeID(expr, "Homo Sapiens", "ENSG")
+            expr = bone.normalize(expr, log2=True)
             expr.to_parquet(expr_file, compression="gzip")
         else:
             expr = pd.read_parquet(expr_file)
 
         peters = bone.BoNE(expr, survival)
         bv = peters.bv()
-        bv["BitVector"] = bv.apply(lambda x: "".join(x.astype(str)), axis=1)
-        bv_file = "bitvector.txt"
-        bv["BitVector"].to_csv(bv_file, sep="\t")
+        bone.Stepminer(bv)
 
 
 def violin(bone_obj):
