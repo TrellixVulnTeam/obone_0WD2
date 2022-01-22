@@ -15,6 +15,7 @@ class Hegemon:
         # check for na in expr
         if self.expr.isnull().values.any():
             raise ValueError("Expr contains null values. Please remove.")
+
         # change expr first column to Name and make all capital letters
         self.expr.index.name = "Name"
         self.expr.index = self.expr.index.str.upper()
