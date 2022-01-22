@@ -177,17 +177,12 @@ class GEO:
         # merge with expr frame to rename with gene names
         gpl_table = gpl_table[["Name", "Symbol", "Description"]]
         expr = expr.merge(gpl_table, how="left", on="Name")
-
-        # remove rows where the gene name was not replaced
-        # expr.loc[expr["Symbol"].isna(), "Symbol"] = expr["Name"]
-        expr = expr[expr["Symbol"].notnull()]
-
+        expr.loc[expr["Symbol"].isna(), "Symbol"] = expr["Name"]
         expr = expr.drop("Name", axis=1).rename(columns={"Symbol": "Name"})
         expr = expr.set_index("Name")
 
         # drop description for now, perhaps include in future version
         expr = expr.drop("Description", axis=1)
-        print(expr)
         return expr
 
     def rename_samples_with(self, expr: pd.DataFrame, gpl_name: str, survival_col: str):
