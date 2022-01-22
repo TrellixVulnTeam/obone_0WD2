@@ -92,16 +92,12 @@ if __name__ == "__main__":
     # avrampou.violin()
     # plt.savefig("avrampou2019_violin.png")
 
-    # rodriguez = alz.rodriguez2021()
+    rodriguez = alz.rodriguez2021_xyz()
     # plt.figure(figsize=(10, 5), dpi=100)
     # rodriguez.violin()
     # plt.savefig("rodriguez2020_violin.png")
 
-    dong = alz.dong2013()
-    dong.expr.to_csv("dong_expr.csv")
-    dong.bv().to_csv("dong_bv.csv")
-    dong.thr().to_csv("dong_thr.csv")
-
+    # dong = alz.dong2013()
     # plt.figure(figsize=(10, 5), dpi=100)
     # dong.violin()
     # plt.savefig("dong2013_violin.png")
