@@ -31,20 +31,25 @@ def read_raw(tar_file, **kwargs):
         with tarfile.open(tar_file) as tar:
             tar.extractall(tar_dir)
 
+    if "sep" not in kwargs:
+        kwargs["sep"] = "\t"
+
     for file in os.listdir(tar_dir):
         gsm = re.sub(".*(GSM[0-9]+).*", "\\1", file)
         filepath = os.path.join(tar_dir, file)
         gsm_df = pd.read_csv(filepath, **kwargs)
         try:
-            gsm_df.columns = ["ProbeID", gsm]
+            gsm_df.columns = ["ID", gsm]
         except:
-            raise ValueError("gsm_df should only contain ID column and read data")
-        gsm_df = gsm_df[gsm_df["ProbeID"].str.contains("ENSG|ENST|ENSMUST|ENSMUSG")]
-        gsm_df = gsm_df.set_index("ProbeID")
+            raise ValueError(
+                "gsm_df should only contain ID column and read data. Enter **kwargs for pd.read_csv() clean"
+            )
+        gsm_df = gsm_df.set_index("ID")
         if "df" not in locals():
             df = gsm_df
         else:
             df = df.merge(gsm_df, left_index=True, right_index=True)
+    return df
 
 
 def add_probeID(expr: pd.DataFrame, organism: str, probe_type: str):
