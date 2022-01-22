@@ -62,9 +62,11 @@ def add_probeID(expr: pd.DataFrame, organism: str, probe_type: str):
 
     if organism == "Homo Sapiens":
         probe_df = pd.read_csv(homo_sapiens, index_col=0)[probe_type]
+        probe_df = probe_df[~probe_df.index.duplicated(keep="first")]
         expr = expr.merge(probe_df, how="left", right_index=True, left_index=True)
     if organism == "Mus Musculus":
         probe_df = pd.read_csv(mus_musculus, index_col=0)[probe_type]
+        probe_df = probe_df[~probe_df.index.duplicated(keep="first")]
         expr = expr.merge(probe_df, how="left", right_index=True, left_index=True)
 
     expr = expr.rename(columns={probe_type: "ProbeID"})

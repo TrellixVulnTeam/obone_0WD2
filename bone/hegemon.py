@@ -16,11 +16,10 @@ class Hegemon:
         if self.expr.isnull().values.any():
             raise ValueError("Expr contains null values. Please remove.")
 
-        # change expr first column to Name and make all capital letters
-        self.expr.index.name = "Name"
-        self.expr.index = self.expr.index.str.upper()
+        # change expr index names
+        self.expr.index = self.expr.index.set_names(["ProbeID", "Name"])
 
-        # change survival first column to Sample and make all capital letters
+        # change survival index name to Sample and make all capital letters
         self.survival.index.name = "Sample"
         self.survival.index = self.survival.index.str.upper()
 

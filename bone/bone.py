@@ -33,9 +33,9 @@ class BoNE(Hegemon):
     def rank(self, gene_weights: dict) -> pd.DataFrame:
         for weight, group in gene_weights.items():
             expr = self.expr
-            expr = expr[expr.index.isin(group)]
+            expr = expr[expr.index.get_level_values("Name").isin(group)]
             thr = self.thr()
-            thr = thr[thr.index.isin(group)]
+            thr = thr[thr.index.get_level_values("Name").isin(group)]
 
             sd = np.std(expr, axis=1).replace(0, 1)
             v = expr.sub(thr.iloc[:, 3], axis=0)
