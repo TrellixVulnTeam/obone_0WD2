@@ -7,6 +7,7 @@ import sys
 from dataclasses import dataclass
 
 sys.path.insert(0, "/Users/oliver.tucher/Code/obone")
+sys.path.insert(0, ".")
 import bone
 
 
@@ -99,9 +100,7 @@ class ALZanalysis:
 
         peters = bone.BoNE(expr, survival)
         bv = peters.bv()
-        network = bone.Stepminer(bv)
-        network.build()
-        network.get_readable()
+        bone.Stepminer(bv)
 
 
 def violin(bone_obj):
