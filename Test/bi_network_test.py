@@ -301,12 +301,15 @@ class BIGraph:
 def main(file_rl):
     file_base = file_rl.split(".")[0]
     file_res_txt = file_base + "-res.txt"
-    # _, edges = BIGraph().readEqGraph(file_res_txt)
-    # df = BIGraph().pruneEqGraph(edges)
-    # df.to_csv(file_base + "-eq.txt", sep="\t", header=False, index=False)
-    df = pd.read_csv(file_base + "-eq.txt")
+    if not os.exists(file_base + "-eq.txt"):
+        _, edges = BIGraph().readEqGraph(file_res_txt)
+        df = BIGraph().pruneEqGraph(edges)
+        df.to_csv(file_base + "-eq.txt", sep="\t", header=False, index=False)
+    else:
+        df = pd.read_csv(file_base + "-eq.txt")
     cls = BIGraph().getClusters(df)
     BIGraph().saveClusters(file_base + "-cls.txt", cls)
+
     net = BINetwork(file_rl)
     net.init()
     cg = BIGraph().getClustersGraph(net, cls)
