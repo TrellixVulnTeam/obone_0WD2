@@ -99,7 +99,9 @@ class ALZanalysis:
 
         peters = bone.BoNE(expr, survival)
         bv = peters.bv()
-        bone.Stepminer(bv)
+        network = bone.Stepminer(bv)
+        network.build()
+        network.get_readable()
 
 
 def violin(bone_obj):
