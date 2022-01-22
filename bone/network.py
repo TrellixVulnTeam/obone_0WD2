@@ -1,4 +1,3 @@
-from io import StringIO
 import subprocess
 import os
 from typing import Any
@@ -24,24 +23,24 @@ class Stepminer:
             )
             bv_file = "bitvector.txt"
             self.bv["BitVector"].to_csv(bv_file, sep="\t")
-            self.bv = bv_file
+        elif isinstance(self.bv, str):
+            bv_file = self.bv
 
         file_path = os.path.dirname(os.path.abspath(__file__))
-        self.stepminer_path = os.path.join(file_path, "references/stepminer-1.1.jar")
+        stepminer = os.path.join(file_path, "references/stepminer-1.1.jar")
 
-    def build(self):
         subprocess.run(
             [
                 "java",
                 "-cp",
-                self.stepminer_path,
+                stepminer,
                 "-Xms64m",
                 "-Xmx10G",
                 "tools.CustomAnalysis",
                 "boolean",
                 "bitMatrix",
                 self.file_rl,
-                self.bv,
+                bv_file,
                 "false_filler.ph",
                 "All",
                 str(self.p_thr),
@@ -49,11 +48,12 @@ class Stepminer:
                 str(self.d_thr),
             ]
         )
+        os.remove(bv_file)
         subprocess.run(
             [
                 "java",
                 "-cp",
-                self.stepminer_path,
+                stepminer,
                 "-Xms64m",
                 "-Xmx10G",
                 "tools.CustomAnalysis",
@@ -66,7 +66,7 @@ class Stepminer:
             [
                 "java",
                 "-cp",
-                self.stepminer_path,
+                stepminer,
                 "-Xms64m",
                 "-Xmx10G",
                 "tools.CustomAnalysis",
@@ -75,15 +75,13 @@ class Stepminer:
                 self.file_rl,
             ]
         )
-
-    def get_readable(self):
         # create -res.txt for human readable results
         file_res_txt = self.file_rl.split(".")[0] + "-res.txt"
-        network_res = subprocess.run(
+        subprocess.run(
             [
                 "java",
                 "-cp",
-                self.stepminer_path,
+                stepminer,
                 "-Xms64m",
                 "-Xmx10G",
                 "tools.CustomAnalysis",
@@ -92,6 +90,5 @@ class Stepminer:
                 self.file_rl,
                 ">",
                 file_res_txt,
-            ],
+            ]
         )
-        return df
