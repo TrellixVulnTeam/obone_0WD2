@@ -93,8 +93,5 @@ class Stepminer:
                 ">",
                 file_res_txt,
             ],
-            capture_output=True,
         )
-        df = pd.read_csv(StringIO(network_res), sep="\t")
-        df.to_csv(file_res_txt)
         return df
