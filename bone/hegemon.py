@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from multiprocessing.sharedctypes import Value
 import pandas as pd
 import numpy as np
 from io import BytesIO
@@ -11,6 +12,9 @@ class Hegemon:
     survival: pd.DataFrame
 
     def __post_init__(self):
+        # check for na in expr
+        if self.expr.isnull().values.any():
+            raise ValueError("Expr contains null values. Please remove.")
         # change expr first column to Name and make all capital letters
         self.expr.index.name = "Name"
         self.expr.index = self.expr.index.str.upper()
