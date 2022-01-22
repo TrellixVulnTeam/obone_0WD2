@@ -1,5 +1,6 @@
 import os
 import json
+from xmlrpc.client import Boolean
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -83,6 +84,26 @@ class ALZanalysis:
         survival = gse169687.survival()
         print(survival)
 
+    def peters2017(self):
+        gse83687 = bone.GEO(accessionID="GSE83687")
+        survival = gse83687.survival()
+
+        expr_file = f"GSE83687-{gse83687.default_gpl}-expr.parquet.gzip"
+        if not os.path.exists(expr_file):
+            expr = bone.read_raw("GSE83687_RAW.tar")
+            expr.index = expr.index.str.upper()
+            expr.index.name = "Name"
+            expr = bone.add_probeID(expr, "Homo Sapiens", "ENSG")
+            expr.to_parquet(expr_file, compression="gzip")
+        else:
+            expr = pd.read_parquet(expr_file)
+
+        peters = bone.BoNE(expr, survival)
+        bv = peters.bv()
+        bv["BitVector"] = bv.apply(lambda x: "".join(x.astype(str)), axis=1)
+        bv_file = "bitvector.txt"
+        bv["BitVector"].to_csv(bv_file, sep="\t")
+
 
 def violin(bone_obj):
     plt.figure(figsize=(10, 5), dpi=100)
@@ -92,5 +113,4 @@ def violin(bone_obj):
 
 if __name__ == "__main__":
     alz = ALZanalysis()
-    dong = alz.dong2013()
-    violin(dong)
+    peters = alz.peters2017()
