@@ -5,17 +5,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 
+from dataclasses import dataclass
+
 sys.path.insert(0, "/Users/oliver.tucher/Code/obone")
 import bone
-
-from dataclasses import dataclass
 
 
 @dataclass
 class ALZanalysis:
     def __post_init__(self):
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
-        self.gene_weights_1 = self._get_json_weights("alz_gene_weights_1.json")
+        self.gene_weights_1 = self._get_json_weights("gene_weights_1.json")
 
     def _get_json_weights(self, json_file: str):
         with open(json_file) as file_in:
@@ -37,14 +37,15 @@ class ALZanalysis:
 
     def rodriguez2021_xyz(self) -> bone.BoNE:
         gse164788 = bone.GEO(accessionID="GSE164788")
+
         survival = gse164788.survival()
         name = "c drug_concentration_um"
         survival[name] = survival[name].fillna("Control")
         survival[name] = survival[name].astype(str)
         # rename 1 -> 1.0 so that samples 10 and 1 have different regex matches
         survival[name] = survival[name].replace("1", "1.0")
-        # filter survival for different groups
-        survival = survival[survival[xyz] == "xyz"]
+        # filter survival for specific group
+        survival = survival[survival["c title"].str.contains("dsRNA + lipofectamine")]
 
         expr = pd.read_parquet("GSE164788-GPL18573-expr.parquet.gzip")
         expr = expr.set_index("gene_name")
@@ -60,6 +61,7 @@ class ALZanalysis:
         survival = gse40060.survival()
         expr = gse40060.expr(rename_genes=True)
         expr = expr.fillna(0)
+        expr = bone.add_probeID(expr, "Homo Sapiens", "ENSG")
         dong = bone.BoNE(expr, survival)
 
         name = "c source_name_ch1"
@@ -82,22 +84,13 @@ class ALZanalysis:
         print(survival)
 
 
+def violin(bone_obj):
+    plt.figure(figsize=(10, 5), dpi=100)
+    bone_obj.violin()
+    plt.savefig("violin.png")
+
+
 if __name__ == "__main__":
-    import sys
-
     alz = ALZanalysis()
-
-    # avrampou = alz.avrampou2019()
-    # plt.figure(figsize=(10, 5), dpi=100)
-    # avrampou.violin()
-    # plt.savefig("avrampou2019_violin.png")
-
-    rodriguez = alz.rodriguez2021_xyz()
-    # plt.figure(figsize=(10, 5), dpi=100)
-    # rodriguez.violin()
-    # plt.savefig("rodriguez2020_violin.png")
-
-    # dong = alz.dong2013()
-    # plt.figure(figsize=(10, 5), dpi=100)
-    # dong.violin()
-    # plt.savefig("dong2013_violin.png")
+    dong = alz.dong2013()
+    violin(dong)
