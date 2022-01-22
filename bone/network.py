@@ -48,7 +48,6 @@ class Stepminer:
                 str(self.d_thr),
             ]
         )
-        os.remove(bv_file)
         subprocess.run(
             [
                 "java",
