@@ -295,10 +295,10 @@ class BIGraph:
         return relations
 
 
-def main(file_rl):
+def main(file_rl, file_res):
     file_base = file_rl.split(".")[0]
-    file_res_txt = file_base + "-res.txt"
-    _, edges = BIGraph.readEqGraph(file_res_txt)
+    # file_res_txt = file_base + "-res.txt"
+    _, edges = BIGraph.readEqGraph(file_res)
     df = BIGraph.pruneEqGraph(edges)
     df.to_csv(file_base + "-eq.txt", sep="\t", header=False, index=False)
     cls = BIGraph.getClusters(df)
@@ -311,4 +311,5 @@ def main(file_rl):
 
 if __name__ == "__main__":
     file_rl = sys.argv[1]
-    main(file_rl)
+    file_res = sys.argv[2]
+    main(file_rl, file_res)
