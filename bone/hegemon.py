@@ -114,6 +114,7 @@ class Hegemon:
         between = np.logical_and(bv >= low, bv <= high)
         bv = np.where(between, 1, bv)
         bv = pd.DataFrame(bv, columns=self.expr.columns, index=self.expr.index)
+        bv = bv.astype(int)
         return bv
 
     def idx(self) -> pd.DataFrame:
