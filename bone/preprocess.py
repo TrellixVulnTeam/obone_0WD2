@@ -6,9 +6,9 @@ import os
 import re
 
 
-def normalize(expr: pd.DataFrame, type: str = "cpm") -> pd.DataFrame:
-    if type.lower() != "cpm":
-        raise ValueError(f"{type} normalization not available. Please use 'cpm'")
+def normalize(expr: pd.DataFrame, probe_type: str = "cpm") -> pd.DataFrame:
+    if probe_type.lower() != "cpm":
+        raise ValueError(f"{probe_type} normalization not available. Please use 'cpm'")
 
     expr = expr.set_index(["ProbeID", "Name"])
     adata = sc.AnnData(expr.T)
@@ -45,3 +45,29 @@ def read_raw(tar_file, **kwargs):
             df = gsm_df
         else:
             df = df.merge(gsm_df, left_index=True, right_index=True)
+
+
+def add_probeID(expr: pd.DataFrame, organism: str, probe_type: str):
+    file_path = os.path.dirname(os.path.abspath(__file__))
+    homo_sapiens = os.path.join(file_path, "references/homo_sapiens.csv")
+    mus_musculus = os.path.join(file_path, "references/mus_musculus.csv")
+
+    organism = organism.title()
+    if organism not in ["Homo Sapiens", "Mus Musculus"]:
+        raise ValueError("Only 'Homo Sapiens' and 'Mus Musculus' probeIDs available")
+
+    probe_type = probe_type.upper()
+    if probe_type not in ["ENST", "ENSG", "ENSMUST", "ENSMUSG"]:
+        raise ValueError("Only 'ENST', 'ENSG', 'ENSMUST', or 'ENSMUSG' are available.")
+
+    if organism == "Homo Sapiens":
+        probe_df = pd.read_csv(homo_sapiens, index_col=0)[probe_type]
+        expr = expr.merge(probe_df, how="left", right_index=True, left_index=True)
+    if organism == "Mus Musculus":
+        probe_df = pd.read_csv(mus_musculus, index_col=0)[probe_type]
+        expr = expr.merge(probe_df, how="left", right_index=True, left_index=True)
+
+    expr = expr.rename(columns={probe_type: "ProbeID"})
+    expr = expr.reset_index()
+    expr = expr.set_index(["ProbeID", "Name"])
+    return expr
