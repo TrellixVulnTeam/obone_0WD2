@@ -1,18 +1,26 @@
 import subprocess
+import os
+import pandas as pd
 
 
 def stepminer(
-    bv_file: str,
-    file_rl: str = "filler.rl",
+    bv: pd.DataFrame,
+    file_rl: str = "network.rl",
     p_thr: float = 0.1,
     s_thr: float = 3.0,
     d_thr: float = 0.05,
 ) -> str:
+    bv["BitVector"] = bv.apply(lambda x: "".join(x.astype(str)), axis=1)
+    bv_file = "bitvector.txt"
+    bv["BitVector"].to_csv(bv_file, sep="\t")
+
+    file_path = os.path.dirname(os.path.abspath(__file__))
+    stepminer = os.path.join(file_path, "stepminer-1.1.jar")
     subprocess.run(
         [
             "java",
             "-cp",
-            "stepminer-1.1.jar",
+            stepminer,
             "-Xms64m",
             "-Xmx10G",
             "tools.CustomAnalysis",
@@ -27,11 +35,12 @@ def stepminer(
             d_thr,
         ]
     )
+    os.remove(bv_file)
     subprocess.run(
         [
             "java",
             "-cp",
-            "stepminer-1.1.jar",
+            stepminer,
             "-Xms64m",
             "-Xmx10G",
             "tools.CustomAnalysis",
@@ -44,7 +53,7 @@ def stepminer(
         [
             "java",
             "-cp",
-            "stepminer-1.1.jar",
+            stepminer,
             "-Xms64m",
             "-Xmx10G",
             "tools.CustomAnalysis",
