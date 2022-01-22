@@ -167,6 +167,7 @@ class GEO:
         sym_rename = {r: "Symbol" for r in sym_rename}
         gpl_table = gpl_table.rename(columns=sym_rename)
         gpl_table["Symbol"] = gpl_table["Symbol"].replace("---", pd.NA)
+        gpl_table["Symbol"] = gpl_table["Symbol"].str.upper()
 
         # rename columns containing description info to 'Description'
         def_rename = ["GeneName", "Definition"]
