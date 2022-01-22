@@ -22,6 +22,7 @@ def stepminer(
 
     file_path = os.path.dirname(os.path.abspath(__file__))
     stepminer = os.path.join(file_path, "stepminer-1.1.jar")
+
     subprocess.run(
         [
             "java",
