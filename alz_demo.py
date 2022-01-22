@@ -35,7 +35,7 @@ class ALZanalysis:
         avrampou.init(name, self.gene_weights_1, groups)
         return avrampou
 
-    def rodriguez2021(self) -> obone.BoNE:
+    def rodriguez2021_xyz(self) -> obone.BoNE:
         gse164788 = obone.GEO(accessionID="GSE164788")
         survival = gse164788.survival()
         name = "c drug_concentration_um"
@@ -43,6 +43,9 @@ class ALZanalysis:
         survival[name] = survival[name].astype(str)
         # rename 1 -> 1.0 so that samples 10 and 1 have different regex matches
         survival[name] = survival[name].replace("1", "1.0")
+        # filter survival for different groups
+        survival = survival[survival[xyz] == "xyz"]
+
         expr = pd.read_parquet("GSE164788-GPL18573-expr.parquet.gzip")
         expr = expr.set_index("gene_name")
         rodriguez = obone.BoNE(expr, survival)
@@ -57,6 +60,7 @@ class ALZanalysis:
         survival = gse40060.survival()
         expr = gse40060.expr(rename_genes=True)
         dong = obone.BoNE(expr, survival)
+        dong.bv().to_csv("dong_bv.csv")
 
         name = "c source_name_ch1"
         groups = ["endogenous", "overexpressed"]
@@ -75,7 +79,7 @@ class ALZanalysis:
     def ryan2021(self):
         gse169687 = obone.GEO(accessionID="GSE169687")
         survival = gse169687.survival()
-        expr = gse169687.expr()
+        print(survival)
 
 
 if __name__ == "__main__":
@@ -89,12 +93,12 @@ if __name__ == "__main__":
     # avrampou.violin()
     # plt.savefig("avrampou2019_violin.png")
 
-    rodriguez = alz.rodriguez2021()
+    # rodriguez = alz.rodriguez2021()
     # plt.figure(figsize=(10, 5), dpi=100)
     # rodriguez.violin()
     # plt.savefig("rodriguez2020_violin.png")
 
-    # dong = alz.dong2013()
+    dong = alz.dong2013()
     # plt.figure(figsize=(10, 5), dpi=100)
     # dong.violin()
     # plt.savefig("dong2013_violin.png")
