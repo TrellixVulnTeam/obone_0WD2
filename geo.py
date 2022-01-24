@@ -8,6 +8,8 @@ import os
 import glob
 import warnings
 
+from .preprocess import *
+
 
 @dataclass
 class GEO:
@@ -110,7 +112,8 @@ class GEO:
         self,
         gpl_name: str = None,
         log2: bool = False,
-        normalize: bool = False,
+        norm_type: str = None,
+        probeID: str = None,
         rename_genes: bool = False,
         rename_samples_with: str = None,
     ) -> pd.DataFrame:
@@ -119,7 +122,8 @@ class GEO:
         Args:
             gpl_name (str, optional): NCBI GEO GPL. Defaults to None.
             log2 (bool, optional): Take a log2 of entire expression file. Defaults to False.
-            normalize (bool, optional): Normalize expression using scanpy. Defaults to False.
+            norm_type (str, optional): Normalization method. Defaults to None.
+            probeID (str, optional): ProbeID key. Defaults to None.
             rename_genes (bool, optional): rename genes from GEOparse gpl table. Defaults to False.
             rename_samples_with (str, optional): Rename sample (columns) with survival column. Defaults to None.
 
@@ -159,13 +163,16 @@ class GEO:
             else:
                 expr = expr.merge(gsm_s, left_index=True, right_index=True)
 
-        if normalize:
-            expr = self.normalize(expr, "cpm")
+        if norm_type:
+            expr = normalize(expr, norm_type)
 
         if rename_genes:
             expr = self.rename_genes(expr, gpl_name)
 
-        if rename_samples_with != None:
+        if probeID:
+            expr = add_probeID(expr, probeID)
+
+        if rename_samples_with:
             expr = self.rename_samples_with(expr, gpl_name, rename_samples_with)
 
         if expr.isnull().values.any():
@@ -221,17 +228,4 @@ class GEO:
         not_in_expr = [c for c in columns if c not in expr.columns]
         if len(not_in_expr) > 0:
             print(f"{not_in_expr} columns were not renamed.")
-        return expr
-
-    def normalize(expr: pd.DataFrame, type: str = "cpm") -> pd.DataFrame:
-        if type.lower() != "cpm":
-            raise ValueError(f"{type} normalization not available. Please use 'cpm'")
-
-        adata = sc.AnnData(expr.T)
-        # target_sum of 1e6 equates to counts per million (cpm) normalization
-        if type == "cpm":
-            target_sum = 1e6
-        sc.pp.normalize_total(adata, target_sum=target_sum)
-        sc.pp.log1p(adata, base=2)
-        expr = adata.to_df().T
         return expr
