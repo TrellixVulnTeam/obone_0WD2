@@ -12,15 +12,29 @@ def log2(expr: pd.DataFrame):
 
 
 def normalize(
-    expr: pd.DataFrame, probe_type: str = "cpm", log2: bool = False
+    expr: pd.DataFrame, norm_type: str = "cpm", log2: bool = False
 ) -> pd.DataFrame:
-    if probe_type.lower() != "cpm":
-        raise ValueError(f"{probe_type} normalization not available. Please use 'cpm'")
+    """Normalize given expression file via scanpy preprocessing
+
+    Args:
+        expr (pd.DataFrame): Expression file to be normalized
+        norm_type (str, optional): Normalization method. Defaults to "cpm".
+        log2 (bool, optional): Take log2 of all values after normalization. Defaults to False.
+
+    Raises:
+        ValueError: Only cpm normalization is currently available
+
+    Returns:
+        pd.DataFrame: Normalized expression dataframe
+    """
+    if norm_type.lower() != "cpm":
+        raise ValueError(f"{norm_type} normalization not available. Please use 'cpm'")
+    elif norm_type.lower == "cpm":
+        norm_type = 1e6
 
     adata = sc.AnnData(expr.T)
-    # adata.var_names_make_unique()
     # 1e6 = counts per million (cpm) normalization
-    sc.pp.normalize_total(adata, target_sum=1e6)
+    sc.pp.normalize_total(adata, target_sum=norm_type)
     sc.pp.log1p(adata, base=2)
     expr = adata.to_df().T
 
@@ -29,7 +43,18 @@ def normalize(
     return expr
 
 
-def read_raw(tar_file, **kwargs):
+def read_raw(tar_file: str, **kwargs) -> pd.DataFrame:
+    """Parse tar file into expression frame
+
+    Args:
+        tar_file (str): path to tarfile
+
+    Raises:
+        ValueError: **kwargs must clean tarfile to a two column frame with ID and expression value
+
+    Returns:
+        pd.DataFrame: Expression dataframe
+    """
     tar_dir = tar_file.split(".")[0]
     if not os.path.exists(tar_dir):
         with tarfile.open(tar_file) as tar:
@@ -56,7 +81,21 @@ def read_raw(tar_file, **kwargs):
     return df
 
 
-def add_probeID(expr: pd.DataFrame, organism: str, probe_type: str):
+def add_probeID(expr: pd.DataFrame, organism: str, probe_type: str) -> pd.DataFrame:
+    """Add an index level of ProbeID
+
+    Args:
+        expr (pd.DataFrame): Expression file to parse
+        organism (str): Type of organism for reference probe
+        probe_type (str): Probe type to use for ProbeID values
+
+    Raises:
+        ValueError: Only 'homo sapiens' and 'mus musculus' are currently available
+        ValueError: Only certain probe types are currently available
+
+    Returns:
+        pd.DataFrame: Frame with ProbeID in index
+    """
     file_path = os.path.dirname(os.path.abspath(__file__))
     homo_sapiens = os.path.join(file_path, "references/homo_sapiens.csv")
     mus_musculus = os.path.join(file_path, "references/mus_musculus.csv")
@@ -79,6 +118,10 @@ def add_probeID(expr: pd.DataFrame, organism: str, probe_type: str):
         expr = expr.merge(probe_df, how="left", right_index=True, left_index=True)
 
     expr = expr.rename(columns={probe_type: "ProbeID"})
+    if expr.index.name:
+        current_index = [expr.index.name]
+    elif expr.index.names:
+        current_index = expr.index.names
     expr = expr.reset_index()
-    expr = expr.set_index(["ProbeID", "Name"])
+    expr = expr.set_index(["ProbeID"] + current_index)
     return expr
