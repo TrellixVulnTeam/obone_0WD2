@@ -19,8 +19,8 @@ class GEO:
         self.gpls = gse.gpls
         self.default_gpl = list(self.gpls.keys())[0]
 
-        # # remove downloaded soft file
-        # os.remove(glob.glob(f"{self.accessionID}*.soft*")[0])
+        # remove downloaded soft file
+        os.remove(glob.glob(f"{self.accessionID}*.soft*")[0])
 
     def survival(self, gpl_name: str = None) -> pd.DataFrame:
         """Creates metadata information for each GSM (sample)
