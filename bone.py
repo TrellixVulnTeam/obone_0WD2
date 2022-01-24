@@ -19,16 +19,7 @@ class BoNE(Hegemon):
         super().__post_init__()
 
     def init(self, survival_col: str, gene_weights: dict, groups: dict) -> None:
-        self.sample_data = self.plot_data(survival_col, gene_weights, groups)
-        self.cval = list(self.sample_data.sort_values("Score")["Cval"])
-        self.cval_colors = list(self.sample_data["Color"])
-
-        group_data = self.sample_data.drop_duplicates("Annotation")
-        group_data = group_data.set_index("Annotation")
-        self.group_data = group_data
-        self.annotations = list(group_data.index)
-        self.group_colors = list(group_data["Color"])
-        self.res = list(group_data["ROC AUC"].dropna())
+        self.plot_data(survival_col, gene_weights, groups)
 
     def rank(self, gene_weights: dict) -> pd.DataFrame:
         for weight, group in gene_weights.items():
@@ -108,7 +99,6 @@ class BoNE(Hegemon):
         df["Annotation"] = df.groupby(["Cval"])["Sample"].transform("count")
         df["Annotation"] = "(" + df["Annotation"].astype(str) + ")"
         df["Annotation"] = df["Cval"].replace(cval_group).str.title() + df["Annotation"]
-        df = df.set_index("Sample")
 
         # add color
         color = {i: get_cmap("Paired")(i) for i in range(len(groups.keys()))}
@@ -116,7 +106,7 @@ class BoNE(Hegemon):
 
         # add pvalue and roc_auc score
         control_scores = list(df[df["Cval"] == 0]["Score"])
-        for val in df[df["Cval"] != 0]["Cval"].unique():
+        for val in range(1, df["Cval"].max() + 1):
             group_score = list(df[df["Cval"] == val]["Score"])
             _, pval = ttest_ind(control_scores, group_score, equal_var=False)
             if pval < 0.05:
@@ -128,14 +118,17 @@ class BoNE(Hegemon):
 
         # sort data by cval for proper coloring
         df = df.sort_values("Cval")
+
+        self.sample_data = df
         return df
 
     def title_bar(self):
         ax = plt.subplot2grid((4, 1), (0, 0))
-        cval = np.array(self.cval).reshape(1, len(self.cval))
-        extent = [0, len(self.cval), 0, 5]
+        cval = list(self.sample_data.sort_values("Score")["Cval"])
+        cval = np.array(cval).reshape(1, len(cval))
+        extent = [0, len(cval), 0, 5]
         ax.axis(extent)
-        cmap = colors.ListedColormap(self.cval_colors)
+        cmap = colors.ListedColormap(self.sample_data["Color"])
 
         ax.imshow(
             cval,
@@ -144,31 +137,34 @@ class BoNE(Hegemon):
             extent=extent,
             aspect="auto",
         )
-        ax.set(xticks=range(len(self.cval)), xticklabels=[], yticklabels=[])
+        ax.set(xticks=range(len(cval)), xticklabels=[], yticklabels=[])
         ax.tick_params(top=False, left=False, bottom=False, right=False)
         for _, spine in ax.spines.items():
             spine.set_visible(False)
         ax.grid(which="major", color="black", alpha=0.5, linestyle="-", linewidth=0.75)
 
-        res_text = f'ROC: {",".join([str(round(val,2)) for val in self.res])}'
-        ax.text(len(self.cval), 4, res_text)
+        res = self.sample_data.drop_duplicates("Cval")["ROC AUC"].dropna()
+        res_text = f'ROC: {",".join([str(round(val,2)) for val in res])}'
+        ax.text(len(cval), 4, res_text)
         return ax
 
     def title_bar_top(self, ax):
+        cval = self.sample_data["Cval"]
+
         divider = make_axes_locatable(ax)
         ax1 = divider.append_axes("top", size="100%", pad="20%", frame_on=False)
         ax1.axison = False
-        ax1.axis([0, len(self.cval), 0, 5])
+        ax1.axis([0, len(cval), 0, 5])
         ax1.grid(False)
 
-        spacer = len(self.cval) / len(self.annotations)
-        for i in range(len(self.annotations)):
+        spacer = len(cval) / (max(cval) + 1)
+        for i, index in enumerate(self.sample_data.drop_duplicates("Cval").index):
             ax1.add_patch(
                 patches.Rectangle(
                     (i * spacer, 0),
                     1,
                     3,
-                    facecolor=self.group_colors[i],
+                    facecolor=self.sample_data["Color"][index],
                     edgecolor="none",
                     alpha=1.0,
                 )
@@ -176,7 +172,7 @@ class BoNE(Hegemon):
             ax1.text(
                 i * spacer + 1,
                 1,
-                self.annotations[i],
+                self.sample_data["Annotation"][index],
                 rotation="horizontal",
                 ha="left",
                 va="center",
@@ -193,7 +189,7 @@ class BoNE(Hegemon):
         self.title_bar_top(ax)
 
         ax = plt.subplot2grid((4, 1), (1, 0), rowspan=3)
-        sns.set_theme(palette=self.group_colors)
+        sns.set_theme(palette=self.sample_data.drop_duplicates("Cval")["Color"])
 
         ax = sns.violinplot(
             x="Score",
@@ -215,7 +211,8 @@ class BoNE(Hegemon):
         ax.xaxis.grid(True, clip_on=False)
 
         if "Pval" in self.sample_data.columns:
-            text = self.group_data[self.group_data["Pval"].notnull()]
+            text = self.sample_data.drop_duplicates("Cval")
+            text = text[text["Pval"].notnull()]
             y_value = 0.5
             for annotation in text.index:
                 ax.text(
@@ -239,19 +236,24 @@ class BoNE(Hegemon):
         self.title_bar_top(ax)
 
         ax = plt.subplot2grid((4, 1), (1, 0), rowspan=3)
-        df = self.sample_data.reset_index(drop=True)
-        for i in range(len(self.annotations)):
-            df1 = df[df["Annotation"] == self.annotations[i]]
-            annotation = df1["Annotation"].iloc[0]
-            s = df1.reset_index()["index"]
-            s.name = annotation
+        for i in self.sample_data.drop_duplicates("Cval").index:
+            annotation = self.sample_data.loc[i, "Annotation"]
+            df = self.sample_data[self.sample_data["Annotation"] == annotation]
+            s = df.reset_index()["index"]
             if len(s) != 1:
                 ax = s.plot.kde(
-                    bw_method=1.0, ax=ax, c=self.group_colors[i], label=annotation
+                    bw_method=1.0,
+                    ax=ax,
+                    c=self.sample_data["Color"][i],
+                    label=annotation,
                 )
             elif len(s) == 1:
-                df1["y"] = 1
-                ax = df1.plot.line(
-                    x=annotation, y="y", ax=ax, c=self.group_colors[i], label=annotation
+                df["y"] = 1
+                ax = df.plot.line(
+                    x=annotation,
+                    y="y",
+                    ax=ax,
+                    c=self.sample_data["Color"][i],
+                    label=annotation,
                 )
-                ax.axvline(x=df1.index[0], c=self.group_colors[i])
+                ax.axvline(x=df.index[0], c=self.sample_data["Color"][i])
