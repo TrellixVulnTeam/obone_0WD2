@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from multiprocessing.sharedctypes import Value
 import pandas as pd
 import numpy as np
 from io import BytesIO
@@ -17,7 +16,8 @@ class Hegemon:
             raise ValueError("Expr contains null values. Please remove.")
 
         # change expr index names
-        self.expr.index = self.expr.index.set_names(["ProbeID", "Name"])
+        if self.expr.index.name != "Name" and "Name" not in self.expr.index.names:
+            raise ValueError("Expr index must contain column 'Name'")
 
         # change survival index name to Sample and make all capital letters
         self.survival.index.name = "Sample"
