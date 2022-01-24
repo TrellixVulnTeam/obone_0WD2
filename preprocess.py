@@ -81,8 +81,8 @@ def read_raw(tar_file: str, **kwargs) -> pd.DataFrame:
     return df
 
 
-def add_probeID(expr: pd.DataFrame, organism: str, probe_type: str) -> pd.DataFrame:
-    """Add an index level of ProbeID
+def add_probeID(expr: pd.DataFrame, probe_type: str) -> pd.DataFrame:
+    """Add an index level of ProbeID. ProbeID will be merged with existing index
 
     Args:
         expr (pd.DataFrame): Expression file to parse
@@ -90,7 +90,6 @@ def add_probeID(expr: pd.DataFrame, organism: str, probe_type: str) -> pd.DataFr
         probe_type (str): Probe type to use for ProbeID values
 
     Raises:
-        ValueError: Only 'homo sapiens' and 'mus musculus' are currently available
         ValueError: Only certain probe types are currently available
 
     Returns:
@@ -100,19 +99,14 @@ def add_probeID(expr: pd.DataFrame, organism: str, probe_type: str) -> pd.DataFr
     homo_sapiens = os.path.join(file_path, "references/homo_sapiens.csv")
     mus_musculus = os.path.join(file_path, "references/mus_musculus.csv")
 
-    organism = organism.title()
-    if organism not in ["Homo Sapiens", "Mus Musculus"]:
-        raise ValueError("Only 'Homo Sapiens' and 'Mus Musculus' probeIDs available")
-
     probe_type = probe_type.upper()
     if probe_type not in ["ENST", "ENSG", "ENSMUST", "ENSMUSG"]:
         raise ValueError("Only 'ENST', 'ENSG', 'ENSMUST', or 'ENSMUSG' are available.")
-
-    if organism == "Homo Sapiens":
+    elif probe_type in ["ENST", "ENSG"]:
         probe_df = pd.read_csv(homo_sapiens, index_col=0)[probe_type]
         probe_df = probe_df[~probe_df.index.duplicated(keep="first")]
         expr = expr.merge(probe_df, how="left", right_index=True, left_index=True)
-    if organism == "Mus Musculus":
+    elif probe_type in ["ENSMUST", "ENSMUSG"]:
         probe_df = pd.read_csv(mus_musculus, index_col=0)[probe_type]
         probe_df = probe_df[~probe_df.index.duplicated(keep="first")]
         expr = expr.merge(probe_df, how="left", right_index=True, left_index=True)
