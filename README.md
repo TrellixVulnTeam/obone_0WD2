@@ -20,9 +20,8 @@ import bone
 gse40060 = bone.GEO(accessionID="GSE40060")
 # use default GPL number for survival and expr
 gse40060_survival = gse40060.survival()
-gse40060_expr = gse40060.expr(rename_genes=True)
+gse40060_expr = gse40060.expr(rename_genes=True, probeID="ENSG")
 gse40060_expr = gse40060_expr.fillna(0)
-gse40060_expr = bone.add_probeID(gse40060_expr, "Homo Sapiens", "ENSG")
 
 # initialize bone with expression and survival file
 my_bone = bone.BoNE(expr=gse40060_expr, survival=gse40060_survival)
