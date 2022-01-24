@@ -125,8 +125,8 @@ class BoNE(Hegemon):
     def title_bar(self):
         ax = plt.subplot2grid((4, 1), (0, 0))
         cval = list(self.sample_data.sort_values("Score")["Cval"])
-        cval = np.array(cval).reshape(1, len(cval))
-        extent = [0, len(cval), 0, 5]
+        cval = np.array(cval).reshape(1, -1)
+        extent = [0, cval.shape[1], 0, 5]
         ax.axis(extent)
         cmap = colors.ListedColormap(self.sample_data["Color"])
 
@@ -137,15 +137,13 @@ class BoNE(Hegemon):
             extent=extent,
             aspect="auto",
         )
-        ax.set(xticks=range(len(cval)), xticklabels=[], yticklabels=[])
+        ax.set(xticks=range(cval.shape[1]), xticklabels=[], yticklabels=[])
         ax.tick_params(top=False, left=False, bottom=False, right=False)
-        for _, spine in ax.spines.items():
-            spine.set_visible(False)
         ax.grid(which="major", color="black", alpha=0.5, linestyle="-", linewidth=0.75)
 
         res = self.sample_data.drop_duplicates("Cval")["ROC AUC"].dropna()
         res_text = f'ROC: {",".join([str(round(val,2)) for val in res])}'
-        ax.text(len(cval), 4, res_text)
+        ax.text(cval.shape[1], 4, res_text)
         return ax
 
     def title_bar_top(self, ax):
@@ -165,7 +163,6 @@ class BoNE(Hegemon):
                     1,
                     3,
                     facecolor=self.sample_data["Color"][index],
-                    edgecolor="none",
                     alpha=1.0,
                 )
             )
