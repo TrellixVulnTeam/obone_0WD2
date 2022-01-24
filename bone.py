@@ -141,7 +141,7 @@ class BoNE(Hegemon):
         ax.tick_params(top=False, left=False, bottom=False, right=False)
         ax.grid(which="major", color="black", alpha=0.5, linestyle="-", linewidth=0.75)
 
-        res = self.sample_data.drop_duplicates("Cval")["ROC AUC"].dropna()
+        res = set(self.sample_data["ROC AUC"].dropna())
         res_text = f'ROC: {",".join([str(round(val,2)) for val in res])}'
         ax.text(cval.shape[1], 4, res_text)
         return ax
@@ -186,7 +186,7 @@ class BoNE(Hegemon):
         self.title_bar_top(ax)
 
         ax = plt.subplot2grid((4, 1), (1, 0), rowspan=3)
-        sns.set_theme(palette=self.sample_data.drop_duplicates("Cval")["Color"])
+        sns.set_theme(palette=set(self.sample_data["Color"]))
 
         ax = sns.violinplot(
             x="Score",
