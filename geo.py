@@ -6,6 +6,7 @@ import re
 import scanpy as sc
 import os
 import glob
+import warnings
 
 
 @dataclass
@@ -113,6 +114,21 @@ class GEO:
         rename_genes: bool = False,
         rename_samples_with: str = None,
     ) -> pd.DataFrame:
+        """Create expression file from class attribute (NCBI GEO Accession ID)
+
+        Args:
+            gpl_name (str, optional): NCBI GEO GPL. Defaults to None.
+            log2 (bool, optional): Take a log2 of entire expression file. Defaults to False.
+            normalize (bool, optional): Normalize expression using scanpy. Defaults to False.
+            rename_genes (bool, optional): rename genes from GEOparse gpl table. Defaults to False.
+            rename_samples_with (str, optional): Rename sample (columns) with survival column. Defaults to None.
+
+        Raises:
+            ValueError: if GEOparse gsm.table is empty
+
+        Returns:
+            pd.DataFrame: Expression file.
+        """
         if not hasattr(self, "gsms"):
             self._geo_init()
 
@@ -152,6 +168,10 @@ class GEO:
         if rename_samples_with != None:
             expr = self.rename_samples_with(expr, gpl_name, rename_samples_with)
 
+        if expr.isnull().values.any():
+            warnings.warn(
+                "Expression file contains NA values. Must be filled to use with BoNE"
+            )
         return expr
 
     def rename_genes(self, expr: pd.DataFrame, gpl_name: str):
