@@ -1,12 +1,18 @@
+import pandas as pd
 import subprocess
 import os
+import sys
 from typing import Any
-import pandas as pd
 
 from dataclasses import dataclass
 
-from .bone import BoNE
-from .geo import GEO
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
+
+from bone import BoNE
+from geo import GEO
+
 
 # java version: jdk1.8.0_45
 
@@ -36,7 +42,7 @@ class Stepminer:
         self.step3()
         self.human_readable()
 
-    def setp1(self):
+    def step1(self):
         """
         export CLASSPATH="./stepminer-1.1.jar"
         stepminer="java -cp $CLASSPATH -Xms64m -Xmx10G tools.CustomAnalysis"

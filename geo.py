@@ -1,14 +1,19 @@
-from dataclasses import dataclass
 import GEOparse
 import pandas as pd
 import numpy as np
 import re
-import scanpy as sc
 import os
+import sys
 import glob
 import warnings
 
-from .preprocess import *
+from dataclasses import dataclass
+
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
+
+from preprocess import *
 
 
 @dataclass
