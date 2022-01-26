@@ -16,7 +16,7 @@ class GEO:
     accessionID: str
     remove_soft: bool = False
 
-    def _geo_init(self):
+    def init(self):
         # Add GEOparse gsms and gpls attributes as class attributes
         gse = GEOparse.get_GEO(geo=self.accessionID, silent=True)
         self.gsms = gse.gsms
@@ -37,7 +37,7 @@ class GEO:
             pd.DataFrame: survival dataframe including all samples and metadata
         """
         if not hasattr(self, "gsms"):
-            self._geo_init()
+            self.init()
 
         # use first gpl if none specified
         if gpl_name == None:
@@ -113,21 +113,19 @@ class GEO:
     def expr(
         self,
         gpl_name: str = None,
-        log2: bool = False,
         norm_type: str = None,
-        probeID: str = None,
-        rename_genes: bool = False,
-        rename_samples_with: str = None,
+        log2: bool = False,
+        get_genes: bool = True,
+        get_gsm: str = None,
     ) -> pd.DataFrame:
         """Create expression file from class attribute (NCBI GEO Accession ID)
 
         Args:
             gpl_name (str, optional): NCBI GEO GPL. Defaults to None.
-            log2 (bool, optional): Take a log2 of entire expression file. Defaults to False.
             norm_type (str, optional): Normalization method. Defaults to None.
-            probeID (str, optional): ProbeID key. Defaults to None.
-            rename_genes (bool, optional): rename genes from GEOparse gpl table. Defaults to False.
-            rename_samples_with (str, optional): Rename sample (columns) with survival column. Defaults to None.
+            log2 (bool, optional): Take a log2 of entire expression file. Defaults to False.
+            get_genes (bool, optional): rename genes from GEOparse gpl table. Defaults to True.
+            get_gsm (str, optional): Rename sample (columns) with survival column. Defaults to None.
 
         Raises:
             ValueError: if GEOparse gsm.table is empty
@@ -136,7 +134,7 @@ class GEO:
             pd.DataFrame: Expression file.
         """
         if not hasattr(self, "gsms"):
-            self._geo_init()
+            self.init()
 
         if gpl_name == None:
             gpl_name = self.default_gpl
@@ -152,12 +150,9 @@ class GEO:
                 raise ValueError("soft file does not contain expr data")
 
             # collect expr data
-            gsm_df = gsm.table
-            gsm_df.columns = ["Name", name]
-            gsm_s = gsm_df.set_index("Name")
-
-            if log2:
-                gsm_s = np.log2(gsm_s + 1)
+            gsm_df = gsm.table[["ID_REF", "VALUE"]]
+            gsm_df.columns = ["ProbeID", name]
+            gsm_s = gsm_df.set_index("ProbeID")
 
             # merge each column into one dataframe
             if "expr" not in locals():
@@ -168,35 +163,35 @@ class GEO:
         if norm_type:
             expr = normalize(expr, norm_type)
 
-        if rename_genes:
-            expr = self.rename_genes(expr, gpl_name)
+        if log2:
+            expr = np.log2(expr + 1)
 
-        if probeID:
-            expr = add_probeID(expr, probeID)
+        if get_genes:
+            expr = self._get_genes(expr, gpl_name)
 
-        if rename_samples_with:
-            expr = self.rename_samples_with(expr, gpl_name, rename_samples_with)
+        if get_gsm:
+            expr = self._get_gsm(expr, gpl_name, get_gsm)
 
         if expr.isnull().values.any():
             warnings.warn(
-                "Expression file contains NA values. Must be filled to use with BoNE"
+                "Expression file contains NA values. Must be filled prior to use with BoNE"
             )
         return expr
 
-    def rename_genes(self, expr: pd.DataFrame, gpl_name: str):
+    def _get_genes(self, expr: pd.DataFrame, gpl_name: str):
         # clean original gpl table column names
         gpl_table = self.gpls[gpl_name].table
         rename = lambda x: x.replace("_", " ").title().replace(" ", "")
         gpl_table.columns = [rename(c) for c in gpl_table.columns]
-        gpl_table = gpl_table.rename(columns={"Id": "Name"})
+        gpl_table = gpl_table.rename(columns={"Id": "ProbeID"})
 
         # rename columns containing symbol info to 'Symbol'
         sym_rename = []
         [sym_rename.append(c) for c in gpl_table.columns if "Sym" in c]
-        sym_rename = {r: "Symbol" for r in sym_rename}
+        sym_rename = {r: "Name" for r in sym_rename}
         gpl_table = gpl_table.rename(columns=sym_rename)
-        gpl_table["Symbol"] = gpl_table["Symbol"].replace("---", pd.NA)
-        gpl_table["Symbol"] = gpl_table["Symbol"].str.upper()
+        gpl_table["Name"] = gpl_table["Name"].replace("---", pd.NA)
+        gpl_table["Name"] = gpl_table["Name"].str.upper()
 
         # rename columns containing description info to 'Description'
         def_rename = ["GeneName", "Definition"]
@@ -205,17 +200,15 @@ class GEO:
         gpl_table = gpl_table.rename(columns=def_rename)
 
         # merge with expr frame to rename with gene names
-        gpl_table = gpl_table[["Name", "Symbol", "Description"]]
-        expr = expr.merge(gpl_table, how="left", on="Name")
-        expr.loc[expr["Symbol"].isna(), "Symbol"] = expr["Name"]
-        expr = expr.drop("Name", axis=1).rename(columns={"Symbol": "Name"})
-        expr = expr.set_index("Name")
+        gpl_table = gpl_table[["ProbeID", "Name", "Description"]]
+        expr = expr.merge(gpl_table, how="left", on="ProbeID")
+        expr = expr.set_index(["ProbeID", "Name"])
 
         # drop description for now, perhaps include in future version
         expr = expr.drop("Description", axis=1)
         return expr
 
-    def rename_samples_with(self, expr: pd.DataFrame, gpl_name: str, survival_col: str):
+    def _get_gsm(self, expr: pd.DataFrame, gpl_name: str, survival_col: str):
         survival = self.survival(gpl_name)
 
         if survival_col not in survival.columns:
