@@ -14,6 +14,7 @@ from .preprocess import *
 @dataclass
 class GEO:
     accessionID: str
+    remove_soft: bool = False
 
     def _geo_init(self):
         # Add GEOparse gsms and gpls attributes as class attributes
@@ -23,7 +24,8 @@ class GEO:
         self.default_gpl = list(self.gpls.keys())[0]
 
         # remove downloaded soft file
-        os.remove(glob.glob(f"{self.accessionID}*.soft*")[0])
+        if self.remove_soft:
+            os.remove(glob.glob(f"{self.accessionID}*.soft*")[0])
 
     def survival(self, gpl_name: str = None) -> pd.DataFrame:
         """Creates metadata information for each GSM (sample)
