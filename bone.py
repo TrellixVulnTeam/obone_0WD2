@@ -22,7 +22,7 @@ class BoNE(Hegemon):
         self.survival_col = survival_col
         self.gene_weights = self._clean_gene_weights(gene_weights)
         self.groups = self._clean_groups(groups)
-        self.data()
+        self.sample_data = self.data()
 
     def _clean_gene_weights(self, gene_weights) -> dict:
         # check self.gene_weights is dict
@@ -134,6 +134,7 @@ class BoNE(Hegemon):
         df["ROC AUC"] = None
         control_scores = list(df[df["group_val"] == 0]["Score"])
         for val in range(1, df["group_val"].max() + 1):
+            # pval
             group_score = list(df[df["group_val"] == val]["Score"])
             _, pval = ttest_ind(control_scores, group_score, equal_var=False)
             if pval < 0.05:
@@ -144,10 +145,9 @@ class BoNE(Hegemon):
             roc_auc = roc_auc_score(roc_auc_data["group_val"], roc_auc_data["Score"])
             print(roc_auc)
             df.loc[df["group_val"] == val, "ROC AUC"] = roc_auc
+
         # sort data by group_val for proper coloring
         df = df.sort_values("group_val")
-
-        self.sample_data = df
         return df
 
     def title_bar(self):
