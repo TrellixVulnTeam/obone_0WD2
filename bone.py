@@ -132,31 +132,26 @@ class BoNE(Hegemon):
     def title_bar(self):
         ax = plt.subplot2grid((4, 1), (0, 0))
         cval = list(self.sample_data.sort_values("Score")["Cval"])
-        cval = np.array(cval).reshape(1, -1)
-        extent = [0, cval.shape[1], 0, 5]
-        ax.axis(extent)
+        axis = [0, len(cval), 0, 5]
+        ax.axis(axis)
         cmap = colors.ListedColormap(self.sample_data["Color"])
 
         ax.imshow(
-            cval,
+            np.array(cval).reshape(1, -1),
             interpolation="nearest",
             cmap=cmap,
-            extent=extent,
+            extent=axis,
             aspect="auto",
         )
-        ax.set(xticks=range(cval.shape[1]), xticklabels=[], yticklabels=[])
+        ax.set(xticks=range(len(cval)), xticklabels=[], yticklabels=[])
         ax.tick_params(top=False, left=False, bottom=False, right=False)
         ax.grid(which="major", color="black", alpha=0.5, linestyle="-", linewidth=0.75)
 
         res = set(self.sample_data["ROC AUC"].dropna())
         res_text = f'ROC: {",".join([str(round(val,2)) for val in res])}'
-        ax.text(cval.shape[1], 4, res_text)
-        self.title_bar_top(ax)
-        return ax
+        ax.text(len(cval), 4, res_text)
 
-    def title_bar_top(self, ax):
-        cval = self.sample_data["Cval"]
-
+        # make title_bar top patches and label
         divider = make_axes_locatable(ax)
         ax1 = divider.append_axes("top", size="100%", pad="20%", frame_on=False)
         ax1.axison = False
@@ -183,13 +178,12 @@ class BoNE(Hegemon):
                 va="center",
                 fontsize=12,
             )
+        return ax
 
     def violin(self):
         self._check_init()
 
         ax = self.title_bar()
-        self.title_bar_top(ax)
-
         ax = plt.subplot2grid((4, 1), (1, 0), rowspan=3)
         sns.set_theme(palette=set(self.sample_data["Color"]))
 
@@ -232,7 +226,6 @@ class BoNE(Hegemon):
         self._check_init()
 
         ax = self.title_bar()
-        self.title_bar_top(ax)
 
         ax = plt.subplot2grid((4, 1), (1, 0), rowspan=3)
         for i in self.sample_data.drop_duplicates("Cval").index:
