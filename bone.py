@@ -19,10 +19,21 @@ class BoNE(Hegemon):
         super().__post_init__()
 
     def init(self, survival_col: str, gene_weights: dict, groups: dict) -> None:
-        self.plot_data(survival_col, gene_weights, groups)
+        self.survival_col = survival_col
+        self.gene_weights = gene_weights
+        self.groups = groups
+        self.plot_data()
 
-    def rank(self, gene_weights: dict) -> pd.DataFrame:
-        for weight, group in gene_weights.items():
+    def _check_init(self):
+        if not hasattr(self, "survival_col"):
+            raise AttributeError(
+                "BoNE must first be initialized for this method. Please use the '.init()' method"
+            )
+
+    def score(self) -> pd.DataFrame:
+        self._check_init()
+
+        for weight, group in self.gene_weights.items():
             expr = self.expr
             expr = expr[expr.index.get_level_values("Name").isin(group)]
             thr = self.thr()
@@ -41,28 +52,24 @@ class BoNE(Hegemon):
             else:
                 ranks = pd.concat([ranks, rank], axis=1)
 
-        weights = [float(w) for w in list(gene_weights.keys())]
+        weights = [float(w) for w in list(self.gene_weights.keys())]
         ranks["Score"] = np.dot(ranks, np.array(weights))
         ranks.name = "Sample"
-        return ranks
+        ranks = ranks["Score"]
 
-    def score(self, survival_col: str, gene_weights: dict) -> pd.DataFrame:
-        survival = self.survival[survival_col]
+        survival = self.survival[self.survival_col]
         survival.name = "Sample Type"
 
-        # add score
-        score = self.rank(gene_weights)["Score"]
-        # FUTURE: raise warning if survival index != expr columns and alert how many rows lost
-        df = pd.concat((survival, score), join="inner", axis=1)
-        df.index.name = "Sample"
-        return df
+        score_df = pd.concat((survival, ranks), join="inner", axis=1)
+        score_df.index.name = "Sample"
+        return score_df
 
-    def plot_data(self, survival_col, gene_weights, groups) -> pd.DataFrame:
-        df = self.score(survival_col, gene_weights)
+    def plot_data(self) -> pd.DataFrame:
+        df = self.score()
 
         # make group a dictionary
-        if not isinstance(groups, dict):
-            groups = {value: [value] for value in groups}
+        if not isinstance(self.groups, dict):
+            groups = {value: [value] for value in self.groups}
         group_keys = list(groups.keys())
 
         # check that no group values encapsulate other values for later regex
@@ -177,11 +184,8 @@ class BoNE(Hegemon):
                 fontsize=12,
             )
 
-    def violin(self, survival_col=None, gene_weights=None, groups=None):
-        if not hasattr(self, "sample_data"):
-            if survival_col == None:
-                raise ValueError("Either init() BoNE or pass arguments")
-            self.init(survival_col, gene_weights, groups)
+    def violin(self):
+        self._check_init()
 
         ax = self.title_bar()
         self.title_bar_top(ax)
@@ -224,11 +228,8 @@ class BoNE(Hegemon):
                 y_value += 1
         return ax
 
-    def density(self, survival_col=None, gene_weights=None, groups=None):
-        if not hasattr(self, "sample_data"):
-            if survival_col == None:
-                raise ValueError("Either init() BoNE or pass arguments")
-            self.init(survival_col, gene_weights, groups)
+    def density(self):
+        self._check_init()
 
         ax = self.title_bar()
         self.title_bar_top(ax)
