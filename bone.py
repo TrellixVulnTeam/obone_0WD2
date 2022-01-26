@@ -41,6 +41,12 @@ class BoNE(Hegemon):
                 groups = list(groups)
             groups = {value: [value] for value in groups}
 
+        # ensure group values (samples) are a list
+        for key in groups.keys():
+            value = groups[key]
+            if not isinstance(value, list):
+                groups[key] = [value]
+
         # check that no group values encapsulate other values for later regex
         group_keys = list(groups.keys())
         for i, val in enumerate(group_keys):
@@ -100,9 +106,6 @@ class BoNE(Hegemon):
         group_val_group = {}
         group_val_sample_type = {}
         for i, (group_name, sample_types) in enumerate(self.groups.items()):
-            # ensure samples are a list
-            if not isinstance(sample_types, list):
-                sample_types = [sample_types]
             # craete single list of all samples in all groups
             all_sample_types.extend(sample_types)
             # map group_val to group name for later use
@@ -110,12 +113,13 @@ class BoNE(Hegemon):
             # create group_val per sample type
             for sample_type in sample_types:
                 group_val_sample_type[sample_type] = i
+        # set-up regex to filter dataframe
         searchfor = "|".join(all_sample_types)
         df = df[df["Sample Type"].str.contains(searchfor)]
         df["Sample Type"] = df["Sample Type"].str.extract(f"({searchfor})")
         df["group_val"] = df["Sample Type"].replace(group_val_sample_type)
 
-        # add Group
+        # add Group annotation
         df = df.reset_index()
         df["Group"] = df.groupby(["group_val"])["Sample"].transform("count")
         df["Group"] = "(" + df["Group"].astype(str) + ")"
@@ -126,6 +130,8 @@ class BoNE(Hegemon):
         df["group_color"] = df["group_val"].map(color)
 
         # add pvalue and roc_auc score
+        df["Pval"] = None
+        df["ROC AUC"] = None
         control_scores = list(df[df["group_val"] == 0]["Score"])
         for val in range(1, df["group_val"].max() + 1):
             group_score = list(df[df["group_val"] == val]["Score"])
@@ -133,10 +139,11 @@ class BoNE(Hegemon):
             if pval < 0.05:
                 df.loc[df["group_val"] == val, "Pval"] = pval
 
+            # roc score
             roc_auc_data = df[df["group_val"].isin([0, val])]
             roc_auc = roc_auc_score(roc_auc_data["group_val"], roc_auc_data["Score"])
+            print(roc_auc)
             df.loc[df["group_val"] == val, "ROC AUC"] = roc_auc
-
         # sort data by group_val for proper coloring
         df = df.sort_values("group_val")
 
@@ -162,8 +169,9 @@ class BoNE(Hegemon):
         ax.grid(which="major", color="black", alpha=0.5, linestyle="-", linewidth=0.75)
 
         res = set(self.sample_data["ROC AUC"].dropna())
-        res_text = f'ROC: {",".join([str(round(val,2)) for val in res])}'
-        ax.text(len(group_vals), 4, res_text)
+        if len(res) > 0:
+            res_text = f'ROC: {",".join([str(round(val,2)) for val in res])}'
+            ax.text(len(group_vals), 4, res_text)
 
         # make title_bar top patches and annotation
         divider = make_axes_locatable(ax)
