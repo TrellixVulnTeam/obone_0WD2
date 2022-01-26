@@ -20,9 +20,37 @@ class BoNE(Hegemon):
 
     def init(self, survival_col: str, gene_weights: dict, groups: dict) -> None:
         self.survival_col = survival_col
-        self.gene_weights = gene_weights
-        self.groups = groups
+        self.gene_weights = self._clean_gene_weights(gene_weights)
+        self.groups = self._clean_groups(groups)
         self.plot_data()
+
+    def _clean_gene_weights(self, gene_weights):
+        # check self.gene_weights is dict
+        if not isinstance(gene_weights, dict):
+            raise ValueError(
+                "'gene_weights' must be provided as dict: {\weight: [genes]}"
+            )
+        # guarantee that gene weight is float
+        gene_weights = {float(weight): genes for weight, genes in gene_weights.items()}
+        return gene_weights
+
+    def _clean_groups(self, groups):
+        # make group a dictionary
+        if not isinstance(groups, dict):
+            if not isinstance(groups, list):
+                groups = list(groups)
+            groups = {value: [value] for value in groups}
+
+        # check that no group values encapsulate other values for later regex
+        group_keys = list(groups.keys())
+        for i, val in enumerate(group_keys):
+            w_o_val = group_keys[:i] + group_keys[i + 1 :]
+            for v in w_o_val:
+                if val in v:
+                    raise ValueError(
+                        "Group values cannot contain other values (i.e. in [1, 10], 10 contains 1. Change '1' to '1.0')"
+                    )
+        return groups
 
     def _check_init(self):
         if not hasattr(self, "survival_col"):
@@ -67,25 +95,11 @@ class BoNE(Hegemon):
     def plot_data(self) -> pd.DataFrame:
         df = self.score()
 
-        # make group a dictionary
-        if not isinstance(self.groups, dict):
-            groups = {value: [value] for value in self.groups}
-        group_keys = list(groups.keys())
-
-        # check that no group values encapsulate other values for later regex
-        for i, val in enumerate(group_keys):
-            w_o_val = group_keys[:i] + group_keys[i + 1 :]
-            for v in w_o_val:
-                if val in v:
-                    raise ValueError(
-                        "Group values cannot contain other values (i.e. in [1, 10], 10 contains 1. Change '1' to '1.0')"
-                    )
-
         # map cval to samples and groups
         all_sample_types = []
         cval_group = {}
         cval_sample_type = {}
-        for i, (group_name, sample_types) in enumerate(groups.items()):
+        for i, (group_name, sample_types) in enumerate(self.groups.items()):
             # ensure samples are a list
             if not isinstance(sample_types, list):
                 sample_types = [sample_types]
@@ -108,7 +122,7 @@ class BoNE(Hegemon):
         df["Annotation"] = df["Cval"].replace(cval_group).str.title() + df["Annotation"]
 
         # add color
-        color = {i: get_cmap("Paired")(i) for i in range(len(groups.keys()))}
+        color = {i: get_cmap("Paired")(i) for i in range(len(self.groups.keys()))}
         df["Color"] = df["Cval"].map(color)
 
         # add pvalue and roc_auc score
@@ -226,8 +240,8 @@ class BoNE(Hegemon):
         self._check_init()
 
         ax = self.title_bar()
-
         ax = plt.subplot2grid((4, 1), (1, 0), rowspan=3)
+
         for i in self.sample_data.drop_duplicates("Cval").index:
             annotation = self.sample_data.loc[i, "Annotation"]
             df = self.sample_data[self.sample_data["Annotation"] == annotation]
