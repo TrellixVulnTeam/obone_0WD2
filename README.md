@@ -3,6 +3,13 @@
 
 Python workflow for boolean lab analysis.
 
+## To Do:
+- Add heatmap
+- Add reactome
+- Add dotplot
+- Add barplot
+- Add PCA plot
+- Add 'convertmm' function (mouse gene names <- -> human gene names)
 
 ## Features
 
@@ -29,6 +36,7 @@ my_bone = bone.BoNE(expr=gse40060_expr, survival=gse40060_survival)
 
 # define variables for bone
 survival_name = "c source_name_ch1"
+# first group used (in this case 'endogenous') is always control
 gse40060_groups = {"E": "endogenous", "O": "overexpressed"}
 alz_weights = {
     -3: ["SVOP", "CACNG3", "PCYOX1L", "BEX1", "TUBB3", "NRN1", "GAP43", "RGS4"],
