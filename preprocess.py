@@ -82,7 +82,7 @@ def read_raw(tar_file: str, **kwargs) -> pd.DataFrame:
 
 
 def add_probeID(expr: pd.DataFrame, probe_type: str) -> pd.DataFrame:
-    """Add an index level of ProbeID. ProbeID will be merged with existing index
+    """Only RNAseq. Add an index level of ProbeID. ProbeID will be merged with existing index
 
     Args:
         expr (pd.DataFrame): Expression file to parse

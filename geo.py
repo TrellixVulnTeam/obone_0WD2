@@ -3,17 +3,12 @@ import pandas as pd
 import numpy as np
 import re
 import os
-import sys
 import glob
 import warnings
 
 from dataclasses import dataclass
 
-
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.dirname(SCRIPT_DIR))
-
-from preprocess import *
+from .preprocess import *
 
 
 @dataclass

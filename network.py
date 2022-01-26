@@ -6,12 +6,8 @@ from typing import Any
 
 from dataclasses import dataclass
 
-
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.dirname(SCRIPT_DIR))
-
-from bone import BoNE
-from geo import GEO
+from .bone import BoNE
+from .geo import GEO
 
 
 # java version: jdk1.8.0_45

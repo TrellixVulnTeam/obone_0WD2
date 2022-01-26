@@ -9,13 +9,8 @@ import matplotlib.colors as colors
 import matplotlib.patches as patches
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import seaborn as sns
-import os
-import sys
 
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(os.path.dirname(SCRIPT_DIR))
-
-from hegemon import Hegemon
+from .hegemon import Hegemon
 
 
 @dataclass
@@ -149,6 +144,7 @@ class BoNE(Hegemon):
         res = set(self.sample_data["ROC AUC"].dropna())
         res_text = f'ROC: {",".join([str(round(val,2)) for val in res])}'
         ax.text(cval.shape[1], 4, res_text)
+        self.title_bar_top(ax)
         return ax
 
     def title_bar_top(self, ax):
