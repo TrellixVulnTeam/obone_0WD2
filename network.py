@@ -132,13 +132,3 @@ class Stepminer:
             ], capture_output=True
         )
         return output
-
-
-if __name__ == "__main__":
-    gse40060 = GEO(accessionID="GSE40060")
-    survival = gse40060.survival()
-    expr = gse40060.expr(rename_genes=True, probeID="ENSG")
-    expr = expr.fillna(0)
-    dong = BoNE(expr, survival)
-    bv = dong.bv()
-    Stepminer(bv)
