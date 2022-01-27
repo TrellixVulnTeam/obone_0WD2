@@ -14,7 +14,7 @@ from .preprocess import *
 @dataclass
 class GEO:
     accessionID: str
-    remove_soft: bool = False
+    download_soft: bool = True
 
     def init(self):
         # Add GEOparse gsms and gpls attributes as class attributes
@@ -24,7 +24,7 @@ class GEO:
         self.default_gpl = list(self.gpls.keys())[0]
 
         # remove downloaded soft file
-        if self.remove_soft:
+        if not self.download_soft:
             os.remove(glob.glob(f"{self.accessionID}*.soft*")[0])
 
     def survival(self, gpl_name: str = None) -> pd.DataFrame:
