@@ -143,7 +143,6 @@ class BoNE(Hegemon):
             # roc score
             roc_auc_data = df[df["group_val"].isin([0, val])]
             roc_auc = roc_auc_score(roc_auc_data["group_val"], roc_auc_data["Score"])
-            print(roc_auc)
             df.loc[df["group_val"] == val, "ROC AUC"] = roc_auc
 
         # sort data by group_val for proper coloring
