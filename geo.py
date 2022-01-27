@@ -42,7 +42,7 @@ class GEO:
         # use first gpl if none specified
         if gpl_name == None:
             gpl_name = self.default_gpl
-            print("Survival: Using default GPL")
+            print(f"Survival: Using default GPL: {gpl_name}")
 
         to_drop = [
             "geo_accession",
@@ -138,7 +138,7 @@ class GEO:
 
         if gpl_name == None:
             gpl_name = self.default_gpl
-            print("Expr: Using default GPL")
+            print(f"Expr: Using default GPL: {gpl_name}")
 
         for name, gsm in self.gsms.items():
             # confirm that gsm correlates to called gpl
