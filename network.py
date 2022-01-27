@@ -1,4 +1,5 @@
 import pandas as pd
+from io import StringIO
 import subprocess
 import os
 import sys
@@ -36,7 +37,7 @@ class Stepminer:
         self.step1()
         self.step2()
         self.step3()
-        self.human_readable()
+        self.output = pd.read_csv(StringIO(self.human_readable()))
 
     def step1(self):
         """
@@ -115,7 +116,7 @@ class Stepminer:
         """
         # create -res.txt for human readable results
         file_res_txt = self.file_rl.split(".")[0] + "-res.txt"
-        subprocess.run(
+        output = subprocess.run(
             [
                 "java",
                 "-cp",
@@ -128,8 +129,9 @@ class Stepminer:
                 self.file_rl,
                 ">",
                 file_res_txt,
-            ]
+            ], capture_output=True
         )
+        return output
 
 
 if __name__ == "__main__":
