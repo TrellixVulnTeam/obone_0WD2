@@ -1,14 +1,13 @@
 import pandas as pd
 from io import StringIO
+import re
+import tempfile
 import subprocess
 import os
 import sys
 from typing import Any
 
 from dataclasses import dataclass
-
-from .bone import BoNE
-from .geo import GEO
 
 
 # java version: jdk1.8.0_45
@@ -27,26 +26,21 @@ class Stepminer:
             self.bv["BitVector"] = self.bv.apply(
                 lambda x: "".join(x.astype(str)), axis=1
             )
-            bv_file = "bitvector.txt"
-            self.bv["BitVector"].to_csv(bv_file, sep="\t")
-            self.bv = bv_file
+            # create temporary bitvector file
+            with tempfile.NamedTemporaryFile(delete=False) as temp:
+                self.bv["BitVector"].to_csv(temp.name, sep="\t")
+                self.bv = temp.name
 
         file_path = os.path.dirname(os.path.abspath(__file__))
         self.stepminer_path = os.path.join(file_path, "references/stepminer-1.1.jar")
 
-        self.step1()
-        self.step2()
-        self.step3()
-        self.output = pd.read_csv(StringIO(self.human_readable()))
+        self._step1()
+        self._step2()
+        self._step3()
+        self.network = self._step4()
+        os.remove(self.file_rl)
 
-    def step1(self):
-        """
-        export CLASSPATH="./stepminer-1.1.jar"
-        stepminer="java -cp $CLASSPATH -Xms64m -Xmx10G tools.CustomAnalysis"
-        ${stepminer} boolean bitMatrix $FILE.rl \
-            data/peters-2017-ibd-bv.txt \
-            $FILE.ph All 0.1 2.5 0.05
-        """
+    def _step1(self):
         subprocess.run(
             [
                 "java",
@@ -64,16 +58,12 @@ class Stepminer:
                 str(self.p_thr),
                 str(self.s_thr),
                 str(self.d_thr),
-            ]
+            ],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.STDOUT,
         )
 
-    def step2(self):
-        """
-        export CLASSPATH="./stepminer-1.1.jar"
-        stepminer="java -cp $CLASSPATH -Xms64m -Xmx10G tools.CustomAnalysis"
-        cp $FILE.rl $FILE-1.rl
-        ${stepminer} boolean bitMatrixFill $FILE-1.rl
-        """
+    def _step2(self):
         subprocess.run(
             [
                 "java",
@@ -85,15 +75,12 @@ class Stepminer:
                 "boolean",
                 "bitMatrixFill",
                 self.file_rl,
-            ]
+            ],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.STDOUT,
         )
 
-    def step3(self):
-        """
-        export CLASSPATH="./stepminer-1.1.jar"
-        stepminer="java -cp $CLASSPATH -Xms64m -Xmx10G tools.CustomAnalysis"
-        ${stepminer} boolean bitMatrixFillStats $FILE-1.rl
-        """
+    def _step3(self):
         subprocess.run(
             [
                 "java",
@@ -105,17 +92,12 @@ class Stepminer:
                 "boolean",
                 "bitMatrixFillStats",
                 self.file_rl,
-            ]
+            ],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.STDOUT,
         )
 
-    def human_readable(self):
-        """
-        export CLASSPATH="./stepminer-1.1.jar"
-        stepminer="java -cp $CLASSPATH -Xms64m -Xmx10G tools.CustomAnalysis"
-        ${stepminer} boolean bitMatrixPrint $FILE-1.rl > $FILE-res.txt
-        """
-        # create -res.txt for human readable results
-        file_res_txt = self.file_rl.split(".")[0] + "-res.txt"
+    def _step4(self):
         output = subprocess.run(
             [
                 "java",
@@ -127,8 +109,14 @@ class Stepminer:
                 "boolean",
                 "bitMatrixPrint",
                 self.file_rl,
-                ">",
-                file_res_txt,
-            ], capture_output=True
+            ],
+            capture_output=True,
+            text=True,
         )
-        return output
+        output = output.stdout
+        pattern = "AID\tnorel\tlohi\tlolo\thihi\thilo\teqv\topp"
+        span_start = re.search(pattern, output).span()[0]
+        output = output[span_start:]
+        df = pd.read_csv(StringIO(output), sep="\t", index_col=0)
+        df.index.name = "ProbeID"
+        return df
