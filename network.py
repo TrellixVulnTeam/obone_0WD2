@@ -32,15 +32,10 @@ class Stepminer:
                 self.bv = temp.name
 
         file_path = os.path.dirname(os.path.abspath(__file__))
-        self.stepminer_path = os.path.join(file_path, "references/stepminer-1.1.jar")
-
-        self._step1()
-        self._step2()
-        self._step3()
-        self.network = self._step4()
-        os.remove(self.file_rl)
+        self.stepminer_path = os.path.join(file_path, "references/stepminer-1.1.jar")        
 
     def _step1(self):
+        print("building network")
         subprocess.run(
             [
                 "java",
@@ -62,8 +57,11 @@ class Stepminer:
             stdout=subprocess.DEVNULL,
             stderr=subprocess.STDOUT,
         )
+        print("step1 done")
 
     def _step2(self):
+        self._step1()
+
         subprocess.run(
             [
                 "java",
@@ -79,8 +77,11 @@ class Stepminer:
             stdout=subprocess.DEVNULL,
             stderr=subprocess.STDOUT,
         )
+        print("step2 done")
 
     def _step3(self):
+        self._step2()
+
         subprocess.run(
             [
                 "java",
@@ -96,8 +97,12 @@ class Stepminer:
             stdout=subprocess.DEVNULL,
             stderr=subprocess.STDOUT,
         )
+        print("step3 done")
 
-    def _step4(self):
+    def boolean_network(self):
+        print("final step ...")
+        self._step3()
+
         output = subprocess.run(
             [
                 "java",

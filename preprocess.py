@@ -13,9 +13,7 @@ def log2(expr: pd.DataFrame):
     return expr
 
 
-def normalize(
-    expr: pd.DataFrame, norm_type: str = "cpm", log2: bool = False
-) -> pd.DataFrame:
+def log_normalize(expr: pd.DataFrame, norm_type: str = "cpm") -> pd.DataFrame:
     """Normalize given expression file via scanpy preprocessing
 
     Args:
@@ -32,16 +30,13 @@ def normalize(
     if norm_type.lower() != "cpm":
         raise ValueError(f"{norm_type} normalization not available. Please use 'cpm'")
     elif norm_type.lower == "cpm":
+        # 1e6 = counts per million (cpm) normalization
         norm_type = 1e6
 
     adata = sc.AnnData(expr.T)
-    # 1e6 = counts per million (cpm) normalization
-    sc.pp.normalize_total(adata, target_sum=norm_type)
+    sc.pp.normalize_total(adata, target_sum=norm_type, exclude_highly_expressed=True)
     sc.pp.log1p(adata, base=2)
     expr = adata.to_df().T
-
-    if log2:
-        expr = np.log2(expr + 1)
     return expr
 
 
