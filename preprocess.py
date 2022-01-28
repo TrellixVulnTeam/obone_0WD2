@@ -1,6 +1,8 @@
 import pandas as pd
 import numpy as np
 import scanpy as sc
+import tempfile
+from pathlib import Path
 import tarfile
 import os
 import re
@@ -54,22 +56,21 @@ def read_raw(tar_file: str, **kwargs) -> pd.DataFrame:
 
     Returns:
         pd.DataFrame: Expression dataframe
-    """
-    tar_dir = tar_file.split(".")[0]
-    if not os.path.exists(tar_dir):
-        with tarfile.open(tar_file) as tar:
-            tar.extractall(tar_dir)
-
+    """    
     if "sep" not in kwargs:
         kwargs["sep"] = "\t"
 
-    for file in os.listdir(tar_dir):
+    tar_dir = tempfile.TemporaryDirectory()
+    with tarfile.open(tar_file) as tar:
+        tar.extractall(tar_dir.name)
+    for file in os.listdir(tar_dir.name):
         gsm = re.sub(".*(GSM[0-9]+).*", "\\1", file)
-        filepath = os.path.join(tar_dir, file)
-        gsm_df = pd.read_csv(filepath, **kwargs)
+        file = os.path.join(tar_dir.name, file)
+        gsm_df = pd.read_csv(file, **kwargs)
         try:
             gsm_df.columns = ["ID", gsm]
         except:
+            print(gsm_df)
             raise ValueError(
                 "gsm_df should only contain ID column and read data. Enter **kwargs for pd.read_csv() clean"
             )
