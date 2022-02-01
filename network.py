@@ -4,7 +4,6 @@ import re
 import tempfile
 import subprocess
 import os
-import sys
 from typing import Any
 
 from dataclasses import dataclass
@@ -32,7 +31,8 @@ class Stepminer:
                 self.bv = temp.name
 
         file_path = os.path.dirname(os.path.abspath(__file__))
-        self.stepminer_path = os.path.join(file_path, "references/stepminer-1.1.jar")        
+        self.stepminer_path = os.path.join(file_path, "references/stepminer-1.1.jar")
+        self.boolean_network()
 
     def _step1(self):
         print("building network")
@@ -100,8 +100,8 @@ class Stepminer:
         print("step3 done")
 
     def boolean_network(self):
-        print("final step ...")
         self._step3()
+        print("final step ...")
 
         output = subprocess.run(
             [
@@ -119,6 +119,11 @@ class Stepminer:
             text=True,
         )
         output = output.stdout
+        print("writing '-res.txt' file")
+        res_file = f"{self.file_rl.split('.')[0]}-res.txt"
+        with open(res_file, "w") as f_out:
+            f_out.write(output)
+
         pattern = "AID\tnorel\tlohi\tlolo\thihi\thilo\teqv\topp"
         span_start = re.search(pattern, output).span()[0]
         output = output[span_start:]
