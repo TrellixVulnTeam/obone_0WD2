@@ -17,9 +17,11 @@ Python workflow for boolean lab analysis.
 - NCBI GEO parser to build expression and survival files
 - Preprocessing to read raw tarfile
 
-
-
 ## Usage
+
+Notes: 
+- The expression file and survival file must have index (expression: gene names and/or probeID, survival: GSM ID) set.
+- The survival index (GSM IDs) and expression columns (GSM IDs) must match.
 
 ```
 import matplotlib.pyplot as plt
