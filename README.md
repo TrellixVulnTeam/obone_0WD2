@@ -4,6 +4,7 @@
 Python workflow for boolean lab analysis.
 
 ## To Do:
+- Finish Network script
 - Add heatmap
 - Add reactome
 - Add dotplot
